@@ -60,7 +60,7 @@ type Def = Omit<SignalDef, 'mode' | 'source'> & { source?: 'obd' | 'elm' };
 const defs: Def[] = [
   // ── Engine ──────────────────────────────────────────────────────────────
   {
-    id: 'rpm', pid: 0x0c, bytes: 2, quantity: 'rpm', min: 0, max: 8000, digits: 0, category: 'engine', tier: 'fast',
+    id: 'rpm', pid: 0x0c, bytes: 2, quantity: 'rpm', min: 0, max: 16383.75, digits: 0, category: 'engine', tier: 'fast',
     name: { tr: 'Motor devri', en: 'Engine speed' }, short: { tr: 'Devir', en: 'RPM' },
     formula: '(256A+B)/4', decode: (d) => u16(d) / 4,
   },
@@ -75,7 +75,7 @@ const defs: Def[] = [
     formula: 'A*100/255', decode: pct,
   },
   {
-    id: 'absLoad', pid: 0x43, bytes: 2, quantity: 'percent', min: 0, max: 400, digits: 0, category: 'engine', tier: 'medium',
+    id: 'absLoad', pid: 0x43, bytes: 2, quantity: 'percent', min: 0, max: 25700, digits: 0, category: 'engine', tier: 'medium',
     name: { tr: 'Mutlak yük değeri', en: 'Absolute load value' }, short: { tr: 'Mutlak yük', en: 'Abs load' },
     formula: '(256A+B)*100/255', decode: (d) => (u16(d) * 100) / 255,
   },
@@ -169,7 +169,7 @@ const defs: Def[] = [
     formula: 'A-40', decode: temp,
   },
   {
-    id: 'oilTemp', pid: 0x5c, bytes: 1, quantity: 'temperature', min: -40, max: 210, digits: 0, category: 'temperature', tier: 'slow',
+    id: 'oilTemp', pid: 0x5c, bytes: 1, quantity: 'temperature', min: -40, max: 215, digits: 0, category: 'temperature', tier: 'slow',
     name: { tr: 'Motor yağı sıcaklığı', en: 'Engine oil temperature' }, short: { tr: 'Yağ', en: 'Oil' },
     formula: 'A-40', decode: temp, normal: [80, 120],
   },
@@ -192,7 +192,7 @@ const defs: Def[] = [
     [0x08, 'stftB2', 'Short term fuel trim — Bank 2', 'Kısa dönem yakıt düzeltmesi — Banka 2', 'STFT B2', 'fast'],
     [0x09, 'ltftB2', 'Long term fuel trim — Bank 2', 'Uzun dönem yakıt düzeltmesi — Banka 2', 'LTFT B2', 'medium'],
   ] as const).map(([pid, id, en, tr, short, tier]): Def => ({
-    id, pid, bytes: 1, quantity: 'percent', min: -100, max: 99.2, digits: 1, category: 'fuel', tier,
+    id, pid, bytes: 1, quantity: 'percent', min: -100, max: 99.21875, digits: 1, category: 'fuel', tier,
     name: { tr, en }, short: { tr: short, en: short },
     formula: '(A-128)*100/128', decode: (d) => trim(d[0] ?? 128), normal: [-10, 10],
   })),
@@ -227,7 +227,7 @@ const defs: Def[] = [
     formula: 'A*100/255', decode: pct,
   },
   {
-    id: 'injectionTiming', pid: 0x5d, bytes: 2, quantity: 'angle', min: -210, max: 301.99, digits: 2, category: 'fuel', tier: 'medium',
+    id: 'injectionTiming', pid: 0x5d, bytes: 2, quantity: 'angle', min: -210, max: 301.9921875, digits: 2, category: 'fuel', tier: 'medium',
     name: { tr: 'Yakıt enjeksiyon zamanlaması', en: 'Fuel injection timing' }, short: { tr: 'Enj. zaman', en: 'Inj timing' },
     formula: '(256A+B)/128-210', decode: (d) => u16(d) / 128 - 210,
   },
@@ -243,7 +243,7 @@ const defs: Def[] = [
       formula: 'A/200', decode: (d) => (d[0] ?? 0) / 200,
     },
     {
-      id: `o2Trim${s}`, pid, bytes: 2, quantity: 'percent', min: -100, max: 99.2, digits: 1, category: 'emissions', tier: 'medium',
+      id: `o2Trim${s}`, pid, bytes: 2, quantity: 'percent', min: -100, max: 99.21875, digits: 1, category: 'emissions', tier: 'medium',
       name: { tr: `O2 sensör yakıt düzeltmesi ${s}`, en: `O2 sensor fuel trim ${s}` }, short: { tr: `O2 trim ${s}`, en: `O2 trim ${s}` },
       formula: '(B-128)*100/128', decode: (d) => trim(d[1] ?? 128), valid: (d) => d.length > 1 && d[1] !== 0xff,
     },
@@ -267,7 +267,7 @@ const defs: Def[] = [
     formula: 'A*100/255', decode: pct,
   },
   {
-    id: 'egrError', pid: 0x2d, bytes: 1, quantity: 'percent', min: -100, max: 99.2, digits: 1, category: 'emissions', tier: 'medium',
+    id: 'egrError', pid: 0x2d, bytes: 1, quantity: 'percent', min: -100, max: 99.21875, digits: 1, category: 'emissions', tier: 'medium',
     name: { tr: 'EGR hatası', en: 'EGR error' }, short: { tr: 'EGR hata', en: 'EGR err' },
     formula: '(A-128)*100/128', decode: (d) => trim(d[0] ?? 128),
   },
@@ -277,7 +277,7 @@ const defs: Def[] = [
     formula: 'A*100/255', decode: pct,
   },
   {
-    id: 'evapVaporPressure', pid: 0x32, bytes: 2, quantity: 'pressure', min: -8.192, max: 8.192, digits: 3, category: 'emissions', tier: 'slow',
+    id: 'evapVaporPressure', pid: 0x32, bytes: 2, quantity: 'pressure', min: -8.192, max: 8.19175, digits: 3, category: 'emissions', tier: 'slow',
     name: { tr: 'EVAP sistemi buhar basıncı', en: 'Evap system vapor pressure' }, short: { tr: 'EVAP bas.', en: 'EVAP press' },
     formula: 'signed(256A+B)/4 Pa', decode: (d) => { const v = u16(d); return (v >= 0x8000 ? v - 0x10000 : v) / 4 / 1000; },
   },

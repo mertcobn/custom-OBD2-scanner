@@ -421,4 +421,15 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
     öncelikli yoklama döngüsü, ölçülen hız, ardışık hata takibi, ham trafik kaydı.
   - `SimTransport` + `Elm327Emulator`: gerçek adaptör gibi metin üreten sanal ELM327 (echo, başlıklar, çok çerçeve,
     BLE parçalanması, gecikme). Tüm katmanlar bununla uçtan uca test edilir.
+- **Faz 3** ✅ Protokol ve teşhis:
+  - DTC çözümleme (Mode 03/07/0A; CAN sayım baytı, çok çerçeve, eski protokol dolgusu), ECU başına gruplama.
+  - Readiness (01 01): MIL, DTC sayısı, buji/dizel monitör tabloları.
+  - Mode 09: VIN (CAN + eski protokol satırları), kalibrasyon kimlikleri, ECU adı; WMI → marka/ülke, model yılı (30 yıllık döngü).
+  - Mode 02 donmuş kare; OBD standardı (01 1C) ve yakıt tipi (01 51).
+  - Kod silme (04) → monitör ve kodların yeniden okunması.
+  - Demo modu artık gerçek boru hattını kullanıyor: RealBackend + sanal ELM327 + sanal araç.
+  - DTC açıklama veritabanı 183 genel koda genişletildi (TR/EN, ciddiyet).
+  - Tüm PID çözücüleri spesifikasyon örnekleri ve uç değerlerle test edildi (aralık hataları düzeltildi).
+  - **Hata düzeltmesi:** Başlangıçtaki çıplak CR'ın "?" yanıtı sonraki komuta yanıt sanılıp tüm yanıtların
+    bir kaydığı yarış durumu giderildi (gerçek adaptörlerde de olabilirdi); zamanlama varyasyonlarıyla regresyon testi eklendi.
 

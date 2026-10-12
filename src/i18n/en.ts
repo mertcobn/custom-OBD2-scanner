@@ -188,7 +188,12 @@ export const en = {
     exhaustGas: 'Exhaust gas sensor',
     pmFilter: 'Particulate filter',
   },
-  fuelTypes: { gasoline: 'Gasoline', diesel: 'Diesel', lpg: 'LPG', cng: 'CNG', electric: 'Electric', hybrid: 'Hybrid' },
+  fuelTypes: {
+    gasoline: 'Gasoline', diesel: 'Diesel', lpg: 'LPG', cng: 'CNG', electric: 'Electric', hybrid: 'Hybrid',
+    methanol: 'Methanol', ethanol: 'Ethanol', propane: 'Propane',
+    bifuelGasoline: 'Bi-fuel (gasoline)', bifuelLpg: 'Bi-fuel (LPG)', bifuelCng: 'Bi-fuel (CNG)',
+    hybridGasoline: 'Hybrid (gasoline)', hybridDiesel: 'Hybrid (diesel)', hybridElectric: 'Hybrid (electric)',
+  },
   vehicle: {
     vin: 'Vehicle identification number (VIN)',
     vinUnavailable: 'This car did not report a VIN.',

@@ -54,17 +54,14 @@ export function useWatch(ids: string[]): void {
   useEffect(() => watch(key ? key.split(',') : []), [key]);
 }
 
-async function createBackend(target: ConnectTarget): Promise<ObdBackend> {
-  if (target === 'demo') {
-    const { DemoBackend } = await import('./demo/demoBackend');
-    return new DemoBackend();
-  }
-  return new RealBackend(target);
+function createBackend(target: ConnectTarget): ObdBackend {
+  // Demo mode runs the full real pipeline against the virtual ELM327 + virtual car.
+  return new RealBackend(target === 'demo' ? 'sim' : target);
 }
 
 export async function connect(target: ConnectTarget): Promise<void> {
   await disconnect();
-  const b = await createBackend(target);
+  const b = createBackend(target);
   backend = b;
   try {
     await b.connect();

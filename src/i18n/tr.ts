@@ -190,7 +190,12 @@ export const tr: Messages = {
     exhaustGas: 'Egzoz gazı sensörü',
     pmFilter: 'Partikül filtresi',
   },
-  fuelTypes: { gasoline: 'Benzin', diesel: 'Dizel', lpg: 'LPG', cng: 'CNG', electric: 'Elektrik', hybrid: 'Hibrit' },
+  fuelTypes: {
+    gasoline: 'Benzin', diesel: 'Dizel', lpg: 'LPG', cng: 'CNG', electric: 'Elektrik', hybrid: 'Hibrit',
+    methanol: 'Metanol', ethanol: 'Etanol', propane: 'Propan',
+    bifuelGasoline: 'Çift yakıt (benzin)', bifuelLpg: 'Çift yakıt (LPG)', bifuelCng: 'Çift yakıt (CNG)',
+    hybridGasoline: 'Hibrit (benzin)', hybridDiesel: 'Hibrit (dizel)', hybridElectric: 'Hibrit (elektrik)',
+  },
   vehicle: {
     vin: 'Şasi numarası (VIN)',
     vinUnavailable: 'Bu araç şasi numarası bildirmedi.',

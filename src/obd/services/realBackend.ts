@@ -4,13 +4,23 @@ import { useVehicle } from '@/state/vehicle';
 import type { ObdBackend } from '@/obd/controller';
 import { Elm327, ElmError, parseVersion, parseVoltage, type ElmLogEntry } from '@/obd/elm/elm327';
 import { findPidData, frameFormatFor, parseResponse, protocolName, sortEcus, type EcuMessage, type FrameFormat } from '@/obd/protocol/frames';
+import {
+  decodeCalibrationIds,
+  decodeDtc,
+  decodeDtcMessages,
+  decodeFuelType,
+  decodeMonitorStatus,
+  decodeObdStandard,
+  decodeVin,
+  decodeVinInfo,
+} from '@/obd/protocol/diagnostics';
 import { decodeSupportedMask, hasNextRange, signalsForPids } from '@/obd/protocol/supported';
-import { SIGNAL_BY_ID } from '@/obd/signals';
+import { SIGNALS, SIGNAL_BY_ID } from '@/obd/signals';
 import { BleTransport } from '@/obd/transport/ble';
 import { SerialTransport } from '@/obd/transport/serial';
 import { SimTransport } from '@/obd/transport/sim';
 import { TransportError, type Transport } from '@/obd/transport/types';
-import type { Sample } from '@/obd/types';
+import type { Dtc, DtcKind, FreezeFrame, Sample } from '@/obd/types';
 import { sampleBus } from './bus';
 import { PollScheduler } from './scheduler';
 
@@ -109,9 +119,61 @@ export class RealBackend implements ObdBackend {
     }
   }
 
-  /** Hook for vehicle info / DTC reads after the link is up (Phase 3). */
-  protected async afterConnect(): Promise<void> {}
+  /** Vehicle identity, readiness and fault codes — read once right after connecting. */
+  private async afterConnect(): Promise<void> {
+    await this.readVehicleInfo().catch(() => undefined);
+    await this.readMonitor().catch(() => undefined);
+    await this.readDtcs().catch(() => undefined);
+  }
 
+  /** Request that tolerates "NO DATA" / unsupported answers. */
+  private async tryRequest(cmd: string, timeoutMs = 3000): Promise<EcuMessage[]> {
+    try {
+      return await this.exclusive(() => this.request(cmd, timeoutMs));
+    } catch (e) {
+      if (e instanceof ElmError && e.code !== 'closed') return [];
+      throw e;
+    }
+  }
+
+  private async readVehicleInfo(): Promise<void> {
+    const vin = decodeVin(await this.tryRequest('0902', 5000), this.format);
+    const calibrationIds = decodeCalibrationIds(await this.tryRequest('0904', 5000), this.format);
+    const std = this.supportedPids.has(0x1c) ? findPidData(await this.tryRequest('011C'), 0x41, 0x1c)?.data[0] : undefined;
+    const fuel = this.supportedPids.has(0x51) ? findPidData(await this.tryRequest('0151'), 0x41, 0x51)?.data[0] : undefined;
+    const prev = useVehicle.getState().info ?? { ecus: [] };
+    useVehicle.getState().setInfo({
+      ...prev,
+      vin,
+      ...(vin ? decodeVinInfo(vin) : {}),
+      calibrationIds: calibrationIds.length ? calibrationIds : undefined,
+      obdStandard: decodeObdStandard(std),
+      fuelType: decodeFuelType(fuel),
+    });
+  }
+
+  private async readMonitor(): Promise<void> {
+    const hit = findPidData(await this.tryRequest('0101'), 0x41, 0x01);
+    if (hit) useVehicle.getState().setMonitor(decodeMonitorStatus(hit.data));
+  }
+
+  private async readFreezeFrame(): Promise<FreezeFrame | undefined> {
+    const head = findPidData(await this.tryRequest('020200'), 0x42, 0x02);
+    if (!head || head.data.length < 3 || (head.data[1] === 0 && head.data[2] === 0)) return undefined;
+    const dtc = decodeDtc(head.data[1]!, head.data[2]!);
+    const wanted = [0x0c, 0x0d, 0x05, 0x04, 0x06, 0x07, 0x08, 0x09, 0x0f, 0x0b, 0x10, 0x11, 0x0e, 0x03].filter((p) => this.supportedPids.has(p));
+    const values: Record<string, number> = {};
+    for (const pid of wanted) {
+      const hit = findPidData(await this.tryRequest(`02${pid.toString(16).padStart(2, '0').toUpperCase()}00`), 0x42, pid);
+      if (!hit || hit.data.length < 2) continue;
+      const bytes = hit.data.slice(1); // drop frame number
+      for (const s of SIGNALS) {
+        if (s.source !== 'obd' || s.pid !== pid || (s.valid && !s.valid(bytes))) continue;
+        values[s.id] = s.decode(bytes);
+      }
+    }
+    return { dtc, values };
+  }
   private toFailure(e: unknown): ConnectFailure {
     if (e instanceof ConnectFailure) return e;
     if (e instanceof TransportError) return new ConnectFailure(e.code === 'lost' ? 'lost' : e.code, e.message);
@@ -125,9 +187,11 @@ export class RealBackend implements ObdBackend {
   }
 
   private async initAdapter(): Promise<string> {
-    // Some clones need a moment after the link comes up; a bare CR flushes any partial input.
-    await this.transport.write('\r').catch(() => undefined);
+    // Some clones need a moment after the link comes up. A bare CR flushes any partial input;
+    // it goes through the command queue so its "?" + prompt is consumed and can't be taken
+    // as the answer to the next command (which would shift every response by one).
     await sleep(this.transport.kind === 'sim' ? 0 : 200);
+    await this.elm.at('', 1000);
     let reset: string[] | undefined;
     for (let attempt = 0; attempt < 2 && !reset; attempt++) reset = await this.elm.at('ATZ', 3000);
     if (!reset) throw new ConnectFailure('adapterSilent');
@@ -269,8 +333,38 @@ export class RealBackend implements ObdBackend {
     if (err) useConnection.getState().fail('lost', err.message);
   }
 
-  async readDtcs(): Promise<void> {}
-  async clearDtcs(): Promise<void> {}
+  async readDtcs(): Promise<void> {
+    const v = useVehicle.getState();
+    v.setDtcState('loading');
+    try {
+      const dtcs: Dtc[] = [];
+      const modes: [string, number, DtcKind][] = [
+        ['03', 0x43, 'stored'],
+        ['07', 0x47, 'pending'],
+        ['0A', 0x4a, 'permanent'],
+      ];
+      for (const [cmd, service, kind] of modes) dtcs.push(...decodeDtcMessages(await this.tryRequest(cmd, 4000), service, kind, this.format));
+      const ff = dtcs.length ? await this.readFreezeFrame().catch(() => undefined) : undefined;
+      useVehicle.getState().setDtcs(dtcs, ff);
+    } catch {
+      useVehicle.getState().setDtcState('error');
+    }
+  }
+
+  async clearDtcs(): Promise<void> {
+    const v = useVehicle.getState();
+    v.setClearState('loading');
+    try {
+      const msgs = await this.exclusive(() => this.request('04', 5000));
+      if (!msgs.some((m) => m.data[0] === 0x44)) throw new Error('no positive response');
+      v.setClearState('ready');
+    } catch {
+      v.setClearState('error');
+    }
+    await sleep(this.transport.kind === 'sim' ? 0 : 800);
+    await this.readMonitor().catch(() => undefined);
+    await this.readDtcs();
+  }
 
   private async shutdown() {
     this.alive = false;
