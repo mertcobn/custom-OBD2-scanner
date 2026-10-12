@@ -46,6 +46,54 @@ describe('RealBackend over the simulated adapter', () => {
     expect(useConnection.getState().adapter?.voltage).toBeGreaterThan(13);
   });
 
+  it('reads vehicle info, readiness, DTCs and freeze frame, then clears codes', async () => {
+    const { useVehicle } = await import('@/state/vehicle');
+    backend = new RealBackend('sim', new SimTransport({ latencyMs: 0 }));
+    await backend.connect();
+    await backend.readDtcs();
+    let v = useVehicle.getState();
+    expect(v.info).toMatchObject({
+      vin: 'JTDBR32E720012345',
+      make: 'Toyota',
+      country: 'Japan',
+      modelYear: 2002,
+      calibrationIds: ['34D21000', '8966102A2000'],
+      obdStandard: 'EOBD (Europe)',
+      fuelType: 'gasoline',
+      ecus: ['7E8', '7E9'],
+    });
+    expect(v.monitor).toMatchObject({ mil: true, dtcCount: 1, ignition: 'spark' });
+    expect(v.monitor!.monitors.find((m) => m.id === 'catalyst')).toEqual({ id: 'catalyst', supported: true, complete: false });
+    expect(v.dtcs).toEqual([
+      { code: 'P0301', kind: 'stored', ecu: '7E8' },
+      { code: 'P0171', kind: 'pending', ecu: '7E8' },
+    ]);
+    expect(v.freezeFrame?.dtc).toBe('P0301');
+    expect(v.freezeFrame?.values.rpm).toBe(812);
+    expect(v.freezeFrame?.values.coolantTemp).toBe(88);
+
+    await backend.clearDtcs();
+    v = useVehicle.getState();
+    expect(v.clearState).toBe('ready');
+    expect(v.dtcs).toEqual([]);
+    expect(v.monitor?.mil).toBe(false);
+    expect(v.monitor!.monitors.find((m) => m.id === 'catalyst')?.complete).toBe(false);
+    useVehicle.getState().reset();
+  });
+
+  it('connects reliably across adapter timing variations (no response shift)', async () => {
+    for (const latencyMs of [0, 1, 3, 8, 15]) {
+      for (const chunkSize of [1, 5, 20]) {
+        const b = new RealBackend('sim', new SimTransport({ latencyMs, chunkSize }));
+        await b.connect();
+        expect(useConnection.getState().protocol, `${latencyMs}ms/${chunkSize}`).toContain('CAN');
+        expect(useLive.getState().supported).toContain('rpm');
+        await b.disconnect();
+        useConnection.getState().reset();
+      }
+    }
+  }, 30_000);
+
   it('does not poll unsupported signals', async () => {
     backend = new RealBackend('sim', new SimTransport({ latencyMs: 0 }));
     await backend.connect();
