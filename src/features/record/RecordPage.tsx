@@ -7,7 +7,7 @@ import { cx } from '@/lib/cx';
 import { formatDuration, formatSignal, loc, LOCALE } from '@/lib/format';
 import { useConnection } from '@/state/connection';
 import { useLive } from '@/state/live';
-import { useRecording, type RecordingSession } from '@/state/recording';
+import { useRecording, type SessionMeta } from '@/state/recording';
 import { useSettings } from '@/state/settings';
 import { useUi } from '@/state/ui';
 import { formatNumber } from '@/units/units';
@@ -32,6 +32,7 @@ export function RecordPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('nav.record')} kanji="記録" subtitle={t('record.subtitle')} />
+      <RecoveredNotice onOpen={setViewing} />
       {viewed ? (
         <SessionSummary session={viewed} onBack={() => setViewing(undefined)} />
       ) : status === 'finished' && current ? (
@@ -227,11 +228,7 @@ function Recording() {
 
   const saveNote = () => {
     if (noteFor === undefined) return;
-    useRecording.setState((s) => {
-      if (!s.current) return s;
-      const markers = s.current.markers.map((m, i) => (i === noteFor ? { ...m, note: note.trim() || undefined } : m));
-      return { current: { ...s.current, markers } };
-    });
+    useRecording.getState().setMarkerNote(noteFor, note);
     setNoteFor(undefined);
     setNote('');
   };
@@ -310,14 +307,13 @@ function Recording() {
           variant="secondary"
           icon={<MapPin size={20} className="text-beni" />}
           onClick={() => {
-            addMarker();
-            setNoteFor(useRecording.getState().current!.markers.length - 1);
+            setNoteFor(addMarker());
             setNote('');
           }}
         >
           {t('record.mark')}
         </Button>
-        <Button size="lg" variant="primary" icon={<Square size={18} fill="currentColor" />} onClick={stop}>
+        <Button size="lg" variant="primary" icon={<Square size={18} fill="currentColor" />} onClick={() => void stop()}>
           {t('record.stop')}
         </Button>
       </div>
@@ -340,7 +336,7 @@ function History({ onOpen }: { onOpen: (id: string) => void }) {
         <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-sm text-ink-muted">{t('record.historyEmpty')}</p>
       ) : (
         <ul className="card divide-y divide-line overflow-hidden">
-          {list.map((s: RecordingSession) => (
+          {list.map((s: SessionMeta) => (
             <li key={s.id} className="flex items-center">
               <button onClick={() => onOpen(s.id)} className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-surface-2/60">
                 <span className="min-w-0 flex-1">
@@ -348,13 +344,14 @@ function History({ onOpen }: { onOpen: (id: string) => void }) {
                     {new Date(s.startedAt).toLocaleString(LOCALE[lang], { dateStyle: 'medium', timeStyle: 'short' })}
                   </span>
                   <span className="num block text-xs text-ink-muted">
-                    {formatDuration(((s.endedAt ?? s.startedAt) - s.startedAt) / 1000)} · {t('record.samplesCount', { count: s.samples.length })} ·{' '}
+                    {formatDuration(((s.endedAt ?? s.startedAt) - s.startedAt) / 1000)} · {t('record.samplesCount', { count: s.sampleCount })} ·{' '}
                     {t(`record.presets.${s.config.preset}.title`)}
+                    {s.status === 'interrupted' && ` · ${t('record.interrupted')}`}
                   </span>
                 </span>
                 <ChevronRight size={18} className="text-ink-faint" />
               </button>
-              <button onClick={() => remove(s.id)} className="grid size-12 place-items-center text-ink-faint hover:text-beni" aria-label={t('common.delete')}>
+              <button onClick={() => void remove(s.id)} className="grid size-12 place-items-center text-ink-faint hover:text-beni" aria-label={t('common.delete')}>
                 <Trash2 size={17} />
               </button>
             </li>
@@ -363,5 +360,26 @@ function History({ onOpen }: { onOpen: (id: string) => void }) {
       )}
       <p className="mt-3 text-xs text-ink-faint">{t('record.localOnly')}</p>
     </section>
+  );
+}
+
+function RecoveredNotice({ onOpen }: { onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
+  const recovered = useRecording((s) => s.recovered);
+  const dismiss = useRecording((s) => s.dismissRecovered);
+  const first = recovered[0];
+  if (!first) return null;
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl bg-kin-soft p-4 sm:flex-row sm:items-center" role="status">
+      <p className="flex-1 text-[15px]">{t('record.recovered', { count: recovered.length })}</p>
+      <div className="flex gap-2">
+        <Button size="sm" variant="secondary" onClick={() => { onOpen(first); dismiss(); }}>
+          {t('record.recoveredOpen')}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={dismiss}>
+          {t('common.close')}
+        </Button>
+      </div>
+    </div>
   );
 }

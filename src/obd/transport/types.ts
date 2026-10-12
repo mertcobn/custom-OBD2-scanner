@@ -10,6 +10,8 @@ export interface Transport {
   write(text: string): Promise<void>;
   onData(cb: (chunk: string) => void): () => void;
   onClose(cb: (error?: Error) => void): () => void;
+  /** Re-open the same device after an unexpected drop, without the picker. Optional. */
+  reconnect?(): Promise<void>;
 }
 
 export type TransportErrorCode = 'cancelled' | 'unsupported' | 'noCompatibleService' | 'lost' | 'unknown';

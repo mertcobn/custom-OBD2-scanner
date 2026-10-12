@@ -432,4 +432,12 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
   - Tüm PID çözücüleri spesifikasyon örnekleri ve uç değerlerle test edildi (aralık hataları düzeltildi).
   - **Hata düzeltmesi:** Başlangıçtaki çıplak CR'ın "?" yanıtı sonraki komuta yanıt sanılıp tüm yanıtların
     bir kaydığı yarış durumu giderildi (gerçek adaptörlerde de olabilirdi); zamanlama varyasyonlarıyla regresyon testi eklendi.
+- **Faz 4** ✅ Kayıt motoru ve dayanıklılık:
+  - IndexedDB (`shindan` DB): oturum meta verisi + saniyelik örnek partileri; kalıcı depolama isteği.
+  - Oturum başında bağlam anlık görüntüsü (araç, readiness, DTC, donmuş kare, adaptör, protokol, desteklenenler).
+  - İşaretler + not düzenleme, süreli otomatik durdurma, kayıt boyunca ekran açık (Wake Lock).
+  - Bağlantı kopmaları "paused/resumed" olayları olarak kaydedilir (veride boşluğun sebebi bellidir).
+  - Sayfa kapanırsa: açılışta kayıt "yarıda kaldı" olarak son yazılan noktada kapatılır; kullanıcı görene kadar uyarı kalır.
+  - BLE otomatik yeniden bağlanma: aynı cihaza 3 deneme, hızlı yeniden başlatma (bilinen protokolle `ATSP`).
+  - Testler: kayıt motoru (fake-indexeddb), yeniden bağlanma/vazgeçme, E2E: yeniden yükleme sonrası kurtarma.
 

@@ -43,7 +43,7 @@ export function SettingsPage() {
     } catch {
       /* storage may be unavailable */
     }
-    useRecording.setState({ sessions: [] });
+    void useRecording.getState().clearAll();
     setCleared(true);
     setTimeout(() => location.reload(), 600);
   };
