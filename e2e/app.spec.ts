@@ -130,3 +130,38 @@ test('recordings survive a reload; an interrupted one is recovered', async ({ pa
   await expect(page.getByText('Yarıda kaldı').first()).toBeVisible();
   await page.screenshot({ path: `test-results/screens/${test.info().project.name}-14-recovered.png`, fullPage: true });
 });
+
+test('exports: PDF report, AI pack and CSV download', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'one run is enough');
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demoyu dene' }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });
+  await page.getByRole('link', { name: 'Kayıt' }).first().click();
+  await page.getByRole('button', { name: 'Kaydı başlat' }).click();
+  await page.waitForTimeout(4000);
+  await page.getByRole('button', { name: 'Anı işaretle' }).click();
+  await page.getByPlaceholder('ör. rölantide titreme').fill('Gaz pedalında tekleme');
+  await page.getByRole('button', { name: 'Kaydet' }).click();
+  await page.waitForTimeout(4000);
+  await page.getByRole('button', { name: 'Durdur' }).click();
+
+  for (const [label, ext] of [
+    ['PDF rapor', '.pdf'],
+    ['Yapay zekâ veri paketi', '-ai.zip'],
+    ['CSV', '.csv'],
+  ] as const) {
+    const dl = page.waitForEvent('download');
+    await page.getByRole('button', { name: new RegExp(`^${label}`) }).click();
+    const file = await dl;
+    expect(file.suggestedFilename()).toMatch(new RegExp(`^shindan-JTDBR32E720012345-\\d{8}-\\d{4}${ext.replace('.', '\\.')}$`));
+    await file.saveAs(`test-results/exports/recording${ext}`);
+  }
+
+  // Snapshot report from the vehicle page
+  await page.getByRole('link', { name: 'Araç' }).first().click();
+  const dl = page.waitForEvent('download');
+  await page.getByRole('button', { name: /^PDF rapor/ }).click();
+  const file = await dl;
+  expect(file.suggestedFilename()).toMatch(/-report\.pdf$/);
+  await file.saveAs('test-results/exports/snapshot.pdf');
+});

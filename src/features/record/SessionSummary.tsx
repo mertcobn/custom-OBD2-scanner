@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, FileText, MapPin, Package, RotateCcw, Sheet as SheetIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, RotateCcw, Trash2 } from 'lucide-react';
 import { SIGNAL_BY_ID } from '@/obd/signals';
 import { formatDuration, formatSignal, loc, LOCALE, signalUnit, useDisplayValue } from '@/lib/format';
 import { computeStats } from '@/lib/stats';
@@ -11,6 +11,8 @@ import { formatNumber } from '@/units/units';
 import { Button } from '@/ui/Button';
 import { Badge, Card, Chip, SectionTitle } from '@/ui/controls';
 import { TimeChart } from '@/ui/TimeChart';
+import { buildDataset } from '@/export/dataset';
+import { ExportPanel } from '@/features/export/ExportPanel';
 
 export function SessionSummary({ session, onBack, fresh }: { session: SessionMeta; onBack: () => void; fresh?: boolean }) {
   const { t } = useTranslation();
@@ -95,26 +97,9 @@ export function SessionSummary({ session, onBack, fresh }: { session: SessionMet
       <Card className="p-5">
         <SectionTitle kanji="出力">{t('export.title')}</SectionTitle>
         <p className="-mt-2 mb-4 text-sm text-ink-muted">{t('export.body')}</p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            { key: 'pdf', icon: FileText },
-            { key: 'ai', icon: Package },
-            { key: 'csv', icon: SheetIcon },
-          ].map(({ key, icon: Icon }) => (
-            <button
-              key={key}
-              disabled
-              className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-4 text-left disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Icon size={22} className="mt-0.5 shrink-0 text-sakura-deep" />
-              <span>
-                <span className="block font-medium">{t(`export.${key}.title`)}</span>
-                <span className="block text-xs leading-snug text-ink-muted">{t(`export.${key}.body`)}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-ink-faint">{t('export.soon')}</p>
+        <ExportPanel
+          getDataset={async () => buildDataset(session, samples ?? (await useRecording.getState().loadSamples(session.id)))}
+        />
       </Card>
 
       {signals.length > 0 && (

@@ -92,7 +92,8 @@ let pending: Sample[] = [];
 let seq = 0;
 let flushing: Promise<void> = Promise.resolve();
 
-function snapshot(): SessionSnapshot {
+/** The car's current context (identity, faults, readiness, adapter) — stored with recordings and used for reports. */
+export function captureSnapshot(): SessionSnapshot {
   const v = useVehicle.getState();
   const c = useConnection.getState();
   return {
@@ -104,6 +105,25 @@ function snapshot(): SessionSnapshot {
     protocol: c.protocol,
     supported: useLive.getState().supported,
     demo: c.demo,
+  };
+}
+
+/**
+ * Combine the snapshot taken at start with the state at stop. Diagnostics read right after connecting may still
+ * be in flight when a recording starts, so prefer whatever is known at the end.
+ */
+function refreshSnapshot(start: SessionSnapshot): SessionSnapshot {
+  const now = captureSnapshot();
+  const dtcsKnown = useVehicle.getState().dtcState === 'ready';
+  return {
+    ...start,
+    vehicle: now.vehicle ?? start.vehicle,
+    monitor: now.monitor ?? start.monitor,
+    dtcs: dtcsKnown ? now.dtcs : start.dtcs,
+    freezeFrame: dtcsKnown ? now.freezeFrame : start.freezeFrame,
+    adapter: start.adapter ?? now.adapter,
+    protocol: start.protocol ?? now.protocol,
+    supported: start.supported.length ? start.supported : now.supported,
   };
 }
 
@@ -178,7 +198,7 @@ export const useRecording = create<RecordingState>()((set, get) => {
         markers: [],
         events: [],
         sampleCount: 0,
-        snapshot: snapshot(),
+        snapshot: captureSnapshot(),
       };
       const wanted = new Set(config.signals);
       pending = [];
@@ -227,7 +247,13 @@ export const useRecording = create<RecordingState>()((set, get) => {
       void releaseWakeLock();
       const cur = get().current;
       if (!cur || get().status !== 'recording') return;
-      const done: SessionMeta = { ...cur, status: 'finished', endedAt: Date.now(), sampleCount: get().sampleCount };
+      const done: SessionMeta = {
+        ...cur,
+        status: 'finished',
+        endedAt: Date.now(),
+        sampleCount: get().sampleCount,
+        snapshot: refreshSnapshot(cur.snapshot),
+      };
       set((s) => ({ status: 'finished', current: done, sessions: [done, ...s.sessions.filter((x) => x.id !== done.id)] }));
       await flush();
       await persistMeta();
