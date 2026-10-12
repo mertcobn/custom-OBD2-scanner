@@ -1,0 +1,53 @@
+{
+  "name": "shindan",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource/shippori-mincho": "^5.3.0",
+    "@fontsource/zen-kaku-gothic-new": "^5.3.1",
+    "i18next": "^26.4.4",
+    "idb": "^8.0.4",
+    "lucide-react": "^1.55.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-i18next": "^17.0.16",
+    "react-router": "^8.4.0",
+    "uplot": "^1.6.32",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/w3c-web-serial": "^1.0.8",
+    "@types/web-bluetooth": "^0.0.21",
+    "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
+  }
+}
