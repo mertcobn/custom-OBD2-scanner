@@ -17,6 +17,7 @@ export interface ObdBackend {
   setWatched(ids: string[]): void;
   readDtcs(): Promise<void>;
   clearDtcs(): Promise<void>;
+  readTests(): Promise<void>;
 }
 
 export type ConnectTarget = RealTarget | 'demo';
@@ -90,6 +91,10 @@ export async function readDtcs(): Promise<void> {
 
 export async function clearDtcs(): Promise<void> {
   await backend?.clearDtcs();
+}
+
+export async function readTests(): Promise<void> {
+  await backend?.readTests();
 }
 
 // Keep the polled set in sync with recording state and fan samples into the live store.

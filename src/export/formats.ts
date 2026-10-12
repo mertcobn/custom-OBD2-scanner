@@ -4,6 +4,9 @@ import { SIGNAL_BY_ID } from '@/obd/signals';
 import type { Language } from '@/state/settings';
 import { baseUnit, valueAt, type Dataset, type SignalSeries } from './dataset';
 import { findings } from './findings';
+import { monitorName, testName } from '@/obd/protocol/mode06';
+
+const hex2 = (n: number) => `0x${n.toString(16).toUpperCase().padStart(2, '0')}`;
 
 export const SCHEMA = 'shindan.session/v1';
 
@@ -91,6 +94,21 @@ export function toJson(d: Dataset, lang: Language) {
           }
         : null,
       supportedSignals: snap.supported,
+      onboardTests: snap.onboardTests
+        ? snap.onboardTests.map((x) => ({
+            monitorId: hex2(x.mid),
+            monitor: monitorName(x.mid).en,
+            testId: hex2(x.tid),
+            test: testName(x.mid, x.tid).en,
+            ecu: x.ecu,
+            value: x.value,
+            min: x.min,
+            max: x.max,
+            unit: x.unit,
+            result: x.pass ? 'pass' : 'fail',
+            raw: x.raw,
+          }))
+        : null,
     },
     findings: findingTexts(d, lang).map(({ level, key, text }) => ({ level, key, text })),
     signals: d.series.map((s) => ({
@@ -183,6 +201,14 @@ export function toSummaryMarkdown(d: Dataset, lang: Language): string {
       const def = SIGNAL_BY_ID[id];
       if (def) L.push(`| ${def.name[lang]} | ${fmt(val, def.digits)} ${baseUnit(def)} |`);
     }
+    L.push('');
+  }
+
+  if (snap.onboardTests?.length) {
+    L.push(`## ${t('dtc.tests.title')} (Mode 06)`, '');
+    L.push(`| ${t('report.monitor')} | ${t('report.test')} | ${t('report.value')} | ${t('dtc.tests.range')} | ${t('report.result')} |`, '|---|---|---|---|---|');
+    for (const x of snap.onboardTests)
+      L.push(`| ${monitorName(x.mid)[lang]} | ${testName(x.mid, x.tid)[lang]} | ${x.value}${x.unit ? ` ${x.unit}` : ''} | ${x.min} … ${x.max} | ${x.pass ? '✅ ' + t('dtc.tests.pass') : '❌ ' + t('dtc.tests.fail')} |`);
     L.push('');
   }
 

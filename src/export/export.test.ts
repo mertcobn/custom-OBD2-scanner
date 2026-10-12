@@ -45,6 +45,10 @@ function session(overrides: Partial<SessionMeta> = {}): { meta: SessionMeta; sam
       protocol: 'ISO 15765-4 CAN (11 bit, 500 kbaud)',
       supported: SIGNALS,
       demo: true,
+      onboardTests: [
+        { mid: 0xa2, tid: 0x0b, ecu: '7E8', value: 46, min: 0, max: 30, unit: '', pass: false, raw: { uasid: 0x24, value: 46, min: 0, max: 30 } },
+        { mid: 0x01, tid: 0x01, ecu: '7E8', value: 0.45, min: 0.4, max: 0.5, unit: 'V', pass: true, raw: { uasid: 0x0b, value: 450, min: 400, max: 500 } },
+      ],
     },
     ...overrides,
   };
@@ -75,7 +79,7 @@ describe('findings', () => {
   it('reports MIL, codes, readiness and link drops for the demo story', () => {
     const { meta, samples } = session();
     const keys = findings(buildDataset(meta, samples)).map((f) => f.key);
-    expect(keys).toEqual(expect.arrayContaining(['milOn', 'storedDtcs', 'pendingDtcs', 'monitorsIncomplete', 'linkDrops']));
+    expect(keys).toEqual(expect.arrayContaining(['milOn', 'storedDtcs', 'pendingDtcs', 'monitorsIncomplete', 'linkDrops', 'testsFailed']));
     expect(keys).not.toContain('allGood');
   });
 
@@ -112,6 +116,10 @@ describe('formats', () => {
     expect(j.series.rpm!.t_ms.length).toBe(j.series.rpm!.v.length);
     expect(j.series.rpm!.v.every((x) => typeof x === 'number')).toBe(true);
     expect(j.findings.length).toBeGreaterThan(0);
+    expect(j.diagnostics.onboardTests).toEqual([
+      expect.objectContaining({ monitorId: '0xA2', monitor: 'Misfire — cylinder 1', result: 'fail', value: 46, max: 30 }),
+      expect.objectContaining({ monitorId: '0x01', test: 'Rich-to-lean threshold voltage', unit: 'V', result: 'pass' }),
+    ]);
     // round-trips through JSON
     expect(JSON.parse(JSON.stringify(j)).schema).toBe(SCHEMA);
   });
@@ -138,6 +146,7 @@ describe('formats', () => {
     expect(tr).toContain('# Shindan — Araç teşhis raporu');
     expect(tr).toContain('| P0301 | Kayıtlı | 7E8 | 1. silindirde tekleme tespit edildi |');
     expect(tr).toContain('Rölantide titreme');
+    expect(tr).toContain('| Tekleme — 1. silindir | Tekleme sayısı (son 10 sürüş ortalaması) | 46 | 0 … 30 | ❌ Kaldı |');
     const en = toSummaryMarkdown(d, 'en');
     expect(en).toContain('## Findings');
     expect(en).toContain('Cylinder 1 misfire detected');

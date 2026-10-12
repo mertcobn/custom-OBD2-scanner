@@ -14,6 +14,7 @@ import {
   decodeVin,
   decodeVinInfo,
 } from '@/obd/protocol/diagnostics';
+import { decodeMode06 } from '@/obd/protocol/mode06';
 import { decodeSupportedMask, hasNextRange, signalsForPids } from '@/obd/protocol/supported';
 import { SIGNALS, SIGNAL_BY_ID } from '@/obd/signals';
 import { BleTransport } from '@/obd/transport/ble';
@@ -407,6 +408,37 @@ export class RealBackend implements ObdBackend {
     }
   }
 
+  /** Mode 06 on-board test results. Only the CAN format is standardised enough to decode reliably. */
+  async readTests(): Promise<void> {
+    const v = useVehicle.getState();
+    if (this.format === 'legacy') {
+      v.setTests('unsupported');
+      return;
+    }
+    v.setTestsState('loading');
+    try {
+      const mids: number[] = [];
+      for (let base = 0; base <= 0xe0; base += 0x20) {
+        const hit = findPidData(await this.tryRequest(`06${base.toString(16).padStart(2, '0').toUpperCase()}`, 4000), 0x46, base);
+        if (!hit) break;
+        const found = decodeSupportedMask(base, hit.data.slice(0, 4));
+        mids.push(...found.filter((m) => m % 0x20 !== 0));
+        if (!hasNextRange(base, found)) break;
+      }
+      if (mids.length === 0) {
+        useVehicle.getState().setTests('unsupported');
+        return;
+      }
+      const tests = [];
+      for (const mid of mids) {
+        tests.push(...decodeMode06(await this.tryRequest(`06${mid.toString(16).padStart(2, '0').toUpperCase()}`, 4000), mid));
+      }
+      useVehicle.getState().setTests(tests);
+    } catch {
+      useVehicle.getState().setTestsState('error');
+    }
+  }
+
   async clearDtcs(): Promise<void> {
     const v = useVehicle.getState();
     v.setClearState('loading');
@@ -420,6 +452,8 @@ export class RealBackend implements ObdBackend {
     await sleep(this.transport.kind === 'sim' ? 0 : 800);
     await this.readMonitor().catch(() => undefined);
     await this.readDtcs();
+    // Clearing codes also erases the on-board test results; refresh them if they were shown.
+    if (useVehicle.getState().testsState === 'ready') await this.readTests();
   }
 
   private async shutdown() {

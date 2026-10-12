@@ -165,3 +165,16 @@ test('exports: PDF report, AI pack and CSV download', async ({ page }) => {
   expect(file.suggestedFilename()).toMatch(/-report\.pdf$/);
   await file.saveAs('test-results/exports/snapshot.pdf');
 });
+
+test('on-board tests (Mode 06) show pass/fail', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demoyu dene' }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });
+  await page.getByRole('link', { name: 'Arıza' }).first().click();
+  await page.getByRole('button', { name: 'Testleri oku' }).click();
+  await expect(page.getByText('8 test · 2 başarısız')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Tekleme — 1. silindir' })).toBeVisible();
+  await expect(page.getByText('Kaldı')).toHaveCount(2);
+  await page.getByRole('heading', { name: 'Araç içi testler' }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `test-results/screens/${test.info().project.name}-15-mode06.png`, fullPage: true });
+});
