@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { AppShell } from './AppShell';
+import { RouteError } from './RouteError';
 import { useApplyTheme } from './useTheme';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 
@@ -8,6 +9,7 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <AppShell />,
+    errorElement: <RouteError />,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'live', lazy: async () => ({ Component: (await import('@/features/live/LivePage')).LivePage }) },

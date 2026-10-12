@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Activity, ArrowDown, ArrowUp, Bluetooth, ClipboardCheck, FileDown, Pencil, Plus, Sparkles, TriangleAlert, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bluetooth, ClipboardCheck, Pencil, Plus, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { useWatch } from '@/obd/controller';
 import { SIGNAL_BY_ID } from '@/obd/signals';
 import { formatSignal, health, loc, LOCALE } from '@/lib/format';
@@ -18,6 +18,8 @@ import { EnsoGauge } from '@/ui/EnsoGauge';
 import { PageHeader } from '@/ui/layout';
 import { Sheet } from '@/ui/Sheet';
 import { gaugeRange } from './gaugeRanges';
+import { CATEGORY_COLOR } from '@/lib/categoryColor';
+import { AmbientPetals } from '@/ui/Sakura';
 
 const MAX_GAUGES = 8;
 
@@ -29,51 +31,37 @@ export function DashboardPage() {
 function Welcome() {
   const { t } = useTranslation();
   const openConnect = useUi((s) => s.openConnect);
-  const features = [
-    { icon: Activity, key: 'live' },
-    { icon: TriangleAlert, key: 'dtc' },
-    { icon: FileDown, key: 'export' },
-  ];
   return (
-    <div className="flex flex-col gap-6">
-      <section className="card seigaiha relative overflow-hidden px-6 pt-10 pb-8 sm:px-10 sm:pt-14">
-        <svg viewBox="0 0 200 200" className="pointer-events-none absolute -top-16 -right-16 size-72 opacity-[0.13] sm:size-96" aria-hidden>
+    <section className="card relative flex min-h-[calc(100dvh-12rem)] flex-col items-center justify-center overflow-hidden px-6 py-12 text-center lg:min-h-[36rem]">
+      <AmbientPetals />
+      {/* 日の丸 — the red sun, framed by a faint ensō brush circle */}
+      <div className="relative mb-10 grid size-44 place-items-center sm:size-52" aria-hidden>
+        <svg viewBox="0 0 200 200" className="absolute inset-0 size-full">
           <path
-            d="M 60 168 C 18 140 12 78 52 42 C 92 8 160 20 180 72 C 198 118 170 166 120 178"
+            d="M 58 172 C 14 142 10 76 52 40 C 94 4 164 18 184 72 C 202 120 172 170 118 180"
             fill="none"
             stroke="var(--ink)"
-            strokeWidth="16"
+            strokeOpacity="0.14"
+            strokeWidth="10"
             strokeLinecap="round"
           />
         </svg>
-        <div className="relative max-w-xl">
-          <div className="font-serif text-sm tracking-[0.4em] text-sakura-deep" aria-hidden>
-            診断
-          </div>
-          <h1 className="mt-3 font-serif text-[2.1rem] leading-[1.15] font-semibold tracking-tight sm:text-5xl">{t('welcome.title')}</h1>
-          <p className="mt-4 text-base leading-relaxed text-ink-muted">{t('welcome.body')}</p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button variant="primary" size="lg" icon={<Bluetooth size={20} />} onClick={openConnect}>
-              {t('welcome.connect')}
-            </Button>
-            <Button variant="secondary" size="lg" icon={<Sparkles size={18} />} onClick={() => startConnect('demo')}>
-              {t('welcome.demo')}
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-3" aria-label={t('welcome.featuresLabel')}>
-        {features.map(({ icon: Icon, key }) => (
-          <div key={key} className="card p-5">
-            <Icon size={22} className="text-sakura-deep" />
-            <h2 className="mt-3 font-serif text-lg font-semibold">{t(`welcome.features.${key}.title`)}</h2>
-            <p className="mt-1 text-sm leading-relaxed text-ink-muted">{t(`welcome.features.${key}.body`)}</p>
-          </div>
-        ))}
-      </section>
-      <p className="px-1 text-center text-xs leading-relaxed text-ink-faint">{t('welcome.privacy')}</p>
-    </div>
+        <div className="size-28 rounded-full bg-hinomaru shadow-[0_10px_40px_-8px_var(--hinomaru)] sm:size-32" />
+      </div>
+      <h1 className="font-serif text-5xl font-bold tracking-tight sm:text-6xl">Shindan</h1>
+      <p className="mt-2 font-serif text-lg tracking-[0.6em] text-sakura-deep" aria-hidden>
+        診断
+      </p>
+      <p className="mt-4 text-[15px] text-ink-muted">{t('welcome.tagline')}</p>
+      <div className="mt-9 flex w-full max-w-sm flex-col gap-3">
+        <Button variant="primary" size="lg" icon={<Bluetooth size={20} />} onClick={openConnect}>
+          {t('welcome.connect')}
+        </Button>
+        <Button variant="ghost" size="md" icon={<Sparkles size={18} />} onClick={() => startConnect('demo')}>
+          {t('welcome.demo')}
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -136,7 +124,7 @@ function GaugeTile({ id, large }: { id: string; large?: boolean }) {
         min={min}
         max={max}
         health={health(sig, reading?.v)}
-        accent={large}
+        color={CATEGORY_COLOR[sig.category]}
         size={large ? 'lg' : 'md'}
         className={large ? 'mx-auto max-w-[19rem]' : 'mx-auto max-w-[13rem]'}
       />

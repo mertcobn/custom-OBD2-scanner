@@ -62,6 +62,31 @@ export function SakuraShower({ trigger, count = 18 }: { trigger: number; count?:
   return trigger ? <Burst key={trigger} count={count} /> : null;
 }
 
+/** A few petals drifting slowly and endlessly — background atmosphere for the welcome screen. */
+export function AmbientPetals({ count = 9 }: { count?: number }) {
+  const [petals] = useState(() =>
+    Array.from({ length: count }, (_, i) => ({
+      key: i,
+      style: {
+        left: `${(i / count) * 100 + Math.random() * 8}%`,
+        animationDelay: `${-Math.random() * 14}s`,
+        '--fall-duration': `${11 + Math.random() * 7}s`,
+        '--drift': `${(Math.random() - 0.3) * 120}px`,
+        '--spin': `${(Math.random() > 0.5 ? 1 : -1) * (240 + Math.random() * 300)}deg`,
+      } as CSSProperties,
+    })),
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden" aria-hidden>
+      {petals.map((p) => (
+        <svg key={p.key} viewBox="0 0 20 24" width="13" height="16" className="absolute top-0 animate-drift" style={p.style}>
+          <path d="M10 23 C 2 16 -1 8 4 2 L 10 6 L 16 2 C 21 8 18 16 10 23 Z" fill="var(--sakura)" opacity="0.75" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
 /** Ink-drawn blossom branch, used in empty states. */
 export function BranchIllustration({ className }: { className?: string }) {
   return (

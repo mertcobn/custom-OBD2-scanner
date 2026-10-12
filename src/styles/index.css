@@ -24,6 +24,11 @@
   --ai: #2d4a63; /* indigo: info, chart lines */
   --ai-soft: #dbe4ec;
   --on-accent: #ffffff;
+  /* Traditional colours (伝統色) — one per signal category. Used for strokes and dots, not body text. */
+  --kaki: #c25a28; /* 柿 persimmon */
+  --fuji: #7a5ca8; /* 藤 wisteria */
+  --asagi: #23767c; /* 浅葱 pale indigo-green */
+  --hinomaru: #bc002d; /* 日の丸 the flag's red sun */
   --shadow: 0 1px 0 rgb(30 28 26 / 0.04), 0 8px 24px -12px rgb(30 28 26 / 0.18);
   --paper-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 0 0.22 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --seigaiha-color: rgb(45 74 99 / 0.04);
@@ -50,6 +55,10 @@
   --ai: #8fb3d1;
   --ai-soft: #1f2b36;
   --on-accent: #121417;
+  --kaki: #ec8b55;
+  --fuji: #b89be6;
+  --asagi: #67c3c9;
+  --hinomaru: #e0384f;
   --shadow: 0 1px 0 rgb(0 0 0 / 0.2), 0 10px 30px -14px rgb(0 0 0 / 0.6);
   --paper-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .025 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --seigaiha-color: rgb(143 179 209 / 0.035);
@@ -75,9 +84,13 @@
   --color-ai: var(--ai);
   --color-ai-soft: var(--ai-soft);
   --color-on-accent: var(--on-accent);
+  --color-kaki: var(--kaki);
+  --color-fuji: var(--fuji);
+  --color-asagi: var(--asagi);
+  --color-hinomaru: var(--hinomaru);
 
-  --font-serif: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif CJK JP', 'Noto Serif JP', Georgia, serif;
-  --font-sans: 'Zen Kaku Gothic New', 'Hiragino Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'BIZ UDPMincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', 'Noto Serif CJK JP', 'Noto Serif JP', Georgia, serif;
+  --font-sans: 'M PLUS 1p', 'Hiragino Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   --radius-card: 1.25rem;
@@ -86,6 +99,7 @@
   --animate-ink: ink 1.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
   --animate-fall: fall var(--fall-duration, 3.2s) cubic-bezier(0.3, 0.1, 0.4, 1) forwards;
   --animate-breathe: breathe 1.8s ease-in-out infinite;
+  --animate-drift: drift var(--fall-duration, 14s) linear infinite;
 
   @keyframes ink {
     from {
@@ -105,6 +119,19 @@
     }
     100% {
       transform: translate3d(var(--drift, 40px), 105vh, 0) rotate(var(--spin, 540deg));
+      opacity: 0;
+    }
+  }
+  @keyframes drift {
+    0% {
+      transform: translate3d(0, -8vh, 0) rotate(0deg);
+      opacity: 0;
+    }
+    8% {
+      opacity: 0.85;
+    }
+    100% {
+      transform: translate3d(var(--drift, 60px), 110vh, 0) rotate(var(--spin, 420deg));
       opacity: 0;
     }
   }

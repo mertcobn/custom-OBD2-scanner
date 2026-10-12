@@ -75,7 +75,7 @@ export function TimeChart({
           size: 52,
           font: '11px "JetBrains Mono Variable", monospace',
           label: unit,
-          labelFont: '11px "Zen Kaku Gothic New", sans-serif',
+          labelFont: '11px "M PLUS 1p", sans-serif',
           labelSize: unit ? 16 : 0,
         },
       ],

@@ -49,16 +49,18 @@ export interface EnsoGaugeProps {
   max: number;
   health?: Health;
   accent?: boolean;
+  /** Ink colour for a normal reading (a CSS colour, e.g. the signal category's traditional colour). */
+  color?: string;
   size?: 'md' | 'lg';
   className?: string;
 }
 
-export function EnsoGauge({ label, text, unit, value, min, max, health = 'unknown', accent, size = 'md', className }: EnsoGaugeProps) {
+export function EnsoGauge({ label, text, unit, value, min, max, health = 'unknown', accent, color: ink, size = 'md', className }: EnsoGaugeProps) {
   const id = useId();
   const track = useMemo(() => brushPath(START_DEG, SWEEP_DEG, 1.6, 0.4), []);
   const echo = useMemo(() => brushPath(START_DEG + 4, SWEEP_DEG - 10, 2.4, 2.1), []);
   const frac = value === undefined || !Number.isFinite(value) ? 0 : Math.min(1, Math.max(0, (value - min) / (max - min || 1)));
-  const color = accent && health !== 'high' ? 'var(--sakura-deep)' : TONE[health];
+  const color = health === 'high' || health === 'low' ? TONE[health] : (ink ?? (accent ? 'var(--sakura-deep)' : TONE[health]));
   const [tx, ty] = polar(START_DEG + SWEEP_DEG * frac, R);
   const hasValue = value !== undefined && Number.isFinite(value);
 

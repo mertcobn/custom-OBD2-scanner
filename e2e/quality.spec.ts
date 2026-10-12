@@ -86,7 +86,7 @@ test('works offline after the first visit (PWA)', async ({ page, context }) => {
   await page.waitForTimeout(1500);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Aracının sana söylediklerini dinle.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Shindan', level: 1 })).toBeVisible();
   // Demo mode needs no network at all.
   await page.getByRole('button', { name: 'Demoyu dene' }).click();
   await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });

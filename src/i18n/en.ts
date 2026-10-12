@@ -74,17 +74,9 @@ export const en = {
     browser: { title: 'Bluetooth is not available in this browser', body: 'Open Shindan in Chrome or Edge. You can still explore with demo mode.' },
   },
   welcome: {
-    title: 'Listen to what your car is telling you.',
-    body: 'Connect a Bluetooth OBD2 adapter to read live engine data, check and clear fault codes, and record drives you can export — for you and for AI.',
+    tagline: 'Bluetooth OBD2 diagnostics',
     connect: 'Connect adapter',
     demo: 'Try the demo',
-    featuresLabel: 'What you can do',
-    features: {
-      live: { title: 'Live data', body: 'Every sensor your car reports, with gauges, sparklines and charts.' },
-      dtc: { title: 'Fault codes', body: 'Read stored, pending and permanent codes in plain language. Clear them safely.' },
-      export: { title: 'Record & export', body: 'Capture a drive and download a PDF report or an AI-ready data pack.' },
-    },
-    privacy: 'No account. Your vehicle data never leaves this device unless you download it.',
   },
   dash: {
     rate: '{{rate}} readings/s',
@@ -123,7 +115,7 @@ export const en = {
     noPinned: 'Nothing pinned yet. Tap the star next to a signal.',
     noResults: 'No signals match.',
     emptyTitle: 'Connect to see live data',
-    emptyBody: 'Once connected, every sensor your car supports appears here — only the ones on screen are polled, so they update faster.',
+    emptyBody: 'Every sensor your car supports, live.',
     windowHint: 'Last few minutes. Drag on the chart to zoom, double-click to reset.',
     formula: 'Formula',
     range: 'Range',
@@ -154,7 +146,7 @@ export const en = {
     freezeFrame: 'Freeze frame',
     freezeFrameHelp: 'What the engine was doing at the moment {{code}} was recorded.',
     emptyTitle: 'Connect to read fault codes',
-    emptyBody: 'See why the check engine light is on, what it means, and clear it when the fault is fixed.',
+    emptyBody: 'Read codes, see what they mean, clear them.',
     clear: {
       title: 'Clear fault codes',
       summary: 'Turns off the check engine light and resets readiness monitors.',
@@ -207,7 +199,7 @@ export const en = {
     calIds: 'Calibration IDs',
     supportedCount: 'Supported signals',
     emptyTitle: 'Connect to identify your car',
-    emptyBody: 'VIN, protocol, inspection readiness and adapter details appear here.',
+    emptyBody: 'VIN, protocol and inspection readiness.',
     readiness: {
       title: 'Inspection readiness',
       ready: 'Ready for inspection',
@@ -240,7 +232,7 @@ export const en = {
     },
   },
   record: {
-    subtitle: 'Capture a drive and export it for a mechanic — or an AI.',
+    subtitle: 'Record a drive, export it.',
     step1: 'What to record',
     step2: 'For how long',
     signalCount_one: '{{count}} signal',
@@ -358,6 +350,13 @@ export const en = {
       linkDrops_one: 'The adapter connection dropped {{count}} time during the recording.',
       linkDrops_other: 'The adapter connection dropped {{count}} times during the recording.',
     },
+  },
+  crash: {
+    title: 'Something went wrong',
+    body: 'This screen hit an unexpected error. Reloading usually fixes it. If it keeps happening, copy the details and send them to us.',
+    stale: 'A new version of Shindan was published while this page was open. Reload to continue.',
+    reload: 'Reload',
+    copy: 'Copy details',
   },
   pwa: {
     update: 'A new version of Shindan is ready.',

@@ -462,4 +462,11 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
   - Erişilebilirlik: axe taraması (WCAG 2 A/AA) iki temada temiz; renk token'ları AA kontrastına göre ayarlandı.
   - Adaptör trafik günlüğü (Araç sayfası, kopyalanabilir; AI paketinde `adapter_log.txt`).
   - Belgeler: `docs/DEPLOY.md` (Vercel kurulumu), `docs/PHYSICAL_TEST.md` (Faz 7 kontrol listesi).
+- **Düzeltmeler (kullanıcı geri bildirimi):**
+  - "Unexpected Application Error / l is not a function": Vercel Analytics betiği production'da hata fırlatınca tüm
+    uygulama çöküyordu. İsteğe bağlı bileşenler (analitik, güncelleme bildirimi) artık hata yalıtımlı; kopyalanabilir
+    ayrıntılı hata sayfası; production sourcemap. Regresyon testi: `src/app/Analytics.test.tsx`.
+  - Türkçe karakterler: Shippori Mincho / Zen Kaku Gothic'te ş, ğ, İ yoktu → BIZ UDPMincho + M PLUS 1p (tam Türkçe).
+  - Sade açılış (hinomaru + yavaş sakura yaprakları), uzun tanıtım metinleri kaldırıldı.
+  - Geleneksel renkler (伝統色): kategori başına renk. Motor 紅, yakıt 抹茶, hava 浅葱, sıcaklık 柿, emisyon 藤, elektrik 金, mesafe 藍.
 
