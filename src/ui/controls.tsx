@@ -25,7 +25,8 @@ export function Segmented<T extends string>({
             aria-checked={active}
             onClick={() => onChange(o.value)}
             className={cx(
-              'h-9 min-w-0 flex-1 rounded-xl px-3 text-sm font-medium transition-all',
+              // Grows instead of clipping when a label wraps (long translations, narrow phones).
+              'min-h-9 flex-auto rounded-xl px-2 py-1.5 text-sm leading-tight font-medium whitespace-nowrap transition-all max-[359px]:px-1.5 max-[359px]:text-[13px]',
               active ? 'bg-surface text-ink shadow-[var(--shadow)]' : 'text-ink-muted hover:text-ink',
             )}
           >
@@ -107,7 +108,7 @@ export function Card({ children, className, as: As = 'section' }: { children: Re
 
 export function SectionTitle({ children, kanji, action }: { children: ReactNode; kanji?: string; action?: ReactNode }) {
   return (
-    <div className="mb-3 flex items-end justify-between gap-3">
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
       <h2 className="flex items-baseline gap-2 font-serif text-lg font-semibold">
         {children}
         {kanji && <span className="text-xs font-normal tracking-[0.25em] text-ink-faint">{kanji}</span>}

@@ -47,7 +47,7 @@ function NavBadge({ item }: { item: NavItem }) {
 
 function Brand({ compact }: { compact?: boolean }) {
   return (
-    <NavLink to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Shindan">
+    <NavLink to="/" className="flex min-h-10 shrink-0 items-center gap-2.5" aria-label="Shindan">
       <Hanko char="診" size={compact ? 28 : 34} />
       {/* On very narrow phones (< 360 px) the seal alone is the logo, so the status pill keeps its room. */}
       <span className={cx('font-serif text-xl font-semibold tracking-tight', compact && 'hidden min-[360px]:inline')}>

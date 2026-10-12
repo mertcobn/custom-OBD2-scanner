@@ -240,7 +240,7 @@ export const tr: Messages = {
     signalCount_one: '{{count}} sinyal',
     signalCount_other: '{{count}} sinyal',
     editSignals: 'Sinyalleri seç',
-    untilStop: 'Ben durdurana kadar',
+    untilStop: 'Süresiz',
     minutes_one: '{{count}} dk',
     minutes_other: '{{count}} dk',
     estimate: 'Hızlı sinyaller ≈ {{hz}} Hz, yavaş olanlar (sıcaklıklar) ≈ {{slow}} Hz.',

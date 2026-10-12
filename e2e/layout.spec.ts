@@ -131,3 +131,45 @@ test('gauge text stays inside the ring', async ({ page }) => {
     for (const [x, y] of corners) expect(Math.hypot(x! - cx, y! - cy), `gauge ${i} text crosses the ring`).toBeLessThanOrEqual(fig.width * 0.39 + 8);
   }
 });
+
+/** Every control's text must fit inside its own box (no clipped or spilling labels). */
+async function noClippedControls(page: Page, where: string) {
+  const bad = await page.evaluate(() => {
+    const out: string[] = [];
+    for (const el of document.querySelectorAll<HTMLElement>('button, a, [role="radio"], [role="switch"], label, input')) {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height || getComputedStyle(el).visibility === 'hidden') continue;
+      const style = getComputedStyle(el);
+      if (style.overflow === 'hidden' && style.textOverflow === 'ellipsis') continue; // intentional truncation
+      if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1)
+        out.push(`${el.tagName} "${(el.textContent ?? '').trim().slice(0, 40)}" ${el.scrollWidth}x${el.scrollHeight} > ${el.clientWidth}x${el.clientHeight}`);
+    }
+    return out;
+  });
+  expect(bad, `${where}: text spills out of controls`).toEqual([]);
+}
+
+test('no control text spills out of its box', async ({ page }) => {
+  await page.goto('/');
+  await noClippedControls(page, 'welcome');
+  for (const path of ['/record', '/settings', '/live', '/dtc', '/vehicle']) {
+    await page.goto(path);
+    await page.waitForTimeout(600);
+    await noClippedControls(page, path);
+  }
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demoyu dene' }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });
+  for (const [link, name] of [
+    ['Gösterge', 'dashboard'],
+    ['Canlı veri', 'live'],
+    ['Arıza', 'dtc'],
+    ['Kayıt', 'record'],
+    ['Araç', 'vehicle'],
+  ] as const) {
+    await page.getByRole('link', { name: link }).first().click();
+    await page.waitForTimeout(700);
+    await noClippedControls(page, `${name} (connected)`);
+  }
+  await page.screenshot({ path: `test-results/screens/${test.info().project.name}-layout-record.png`, fullPage: true });
+});
