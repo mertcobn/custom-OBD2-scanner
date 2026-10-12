@@ -76,17 +76,9 @@ export const tr: Messages = {
     browser: { title: 'Bu tarayıcıda Bluetooth yok', body: 'Shindan’ı Chrome veya Edge ile aç. Bu arada demo moduyla gezebilirsin.' },
   },
   welcome: {
-    title: 'Aracının sana söylediklerini dinle.',
-    body: 'Bir Bluetooth OBD2 adaptörü bağla; canlı motor verilerini oku, arıza kodlarını gör ve sil, sürüşlerini kaydedip hem kendin hem de yapay zekâ için dışa aktar.',
+    tagline: 'Bluetooth OBD2 teşhis',
     connect: 'Adaptöre bağlan',
     demo: 'Demoyu dene',
-    featuresLabel: 'Neler yapabilirsin',
-    features: {
-      live: { title: 'Canlı veri', body: 'Aracının bildirdiği tüm sensörler; göstergeler, mini grafikler ve detaylı çizelgelerle.' },
-      dtc: { title: 'Arıza kodları', body: 'Kayıtlı, bekleyen ve kalıcı kodları sade bir dille oku. Güvenle sil.' },
-      export: { title: 'Kayıt ve dışa aktarım', body: 'Bir sürüşü kaydet; PDF rapor ya da yapay zekâya hazır veri paketi olarak indir.' },
-    },
-    privacy: 'Hesap yok. Araç verilerin sen indirmedikçe bu cihazdan çıkmaz.',
   },
   dash: {
     rate: 'saniyede {{rate}} okuma',
@@ -125,7 +117,7 @@ export const tr: Messages = {
     noPinned: 'Henüz sabitlenen yok. Bir sinyalin yanındaki yıldıza dokun.',
     noResults: 'Eşleşen sinyal yok.',
     emptyTitle: 'Canlı veri için bağlan',
-    emptyBody: 'Bağlandığında aracının desteklediği tüm sensörler burada görünür. Yalnızca ekranda olanlar sorgulanır, böylece daha hızlı güncellenir.',
+    emptyBody: 'Aracın desteklediği tüm sensörler burada.',
     windowHint: 'Son birkaç dakika. Yakınlaştırmak için grafikte sürükle, sıfırlamak için çift tıkla.',
     formula: 'Formül',
     range: 'Aralık',
@@ -156,7 +148,7 @@ export const tr: Messages = {
     freezeFrame: 'Donmuş kare',
     freezeFrameHelp: '{{code}} kaydedildiği anda motorun durumu.',
     emptyTitle: 'Arıza kodlarını okumak için bağlan',
-    emptyBody: 'Arıza lambasının neden yandığını, ne anlama geldiğini gör; arıza giderildiğinde sil.',
+    emptyBody: 'Kodları oku, anlamını gör, sil.',
     clear: {
       title: 'Arıza kodlarını sil',
       summary: 'Arıza lambasını söndürür ve hazırlık monitörlerini sıfırlar.',
@@ -209,7 +201,7 @@ export const tr: Messages = {
     calIds: 'Kalibrasyon kimlikleri',
     supportedCount: 'Desteklenen sinyal',
     emptyTitle: 'Aracını tanımak için bağlan',
-    emptyBody: 'Şasi numarası, protokol, muayene hazırlığı ve adaptör bilgileri burada görünür.',
+    emptyBody: 'Şasi no, protokol ve muayene hazırlığı.',
     readiness: {
       title: 'Muayene hazırlığı',
       ready: 'Muayeneye hazır',
@@ -242,7 +234,7 @@ export const tr: Messages = {
     },
   },
   record: {
-    subtitle: 'Bir sürüşü kaydet; ustana ya da bir yapay zekâya ver.',
+    subtitle: 'Sürüşü kaydet, dışa aktar.',
     step1: 'Ne kaydedilsin',
     step2: 'Ne kadar süre',
     signalCount_one: '{{count}} sinyal',
@@ -360,6 +352,13 @@ export const tr: Messages = {
       linkDrops_one: 'Kayıt sırasında adaptör bağlantısı {{count}} kez koptu.',
       linkDrops_other: 'Kayıt sırasında adaptör bağlantısı {{count}} kez koptu.',
     },
+  },
+  crash: {
+    title: 'Bir şeyler ters gitti',
+    body: 'Bu ekranda beklenmeyen bir hata oluştu. Yenilemek genellikle düzeltir. Devam ederse ayrıntıları kopyalayıp bize gönder.',
+    stale: 'Bu sayfa açıkken Shindan’ın yeni bir sürümü yayınlandı. Devam etmek için yenile.',
+    reload: 'Yenile',
+    copy: 'Ayrıntıları kopyala',
   },
   pwa: {
     update: 'Shindan’ın yeni sürümü hazır.',

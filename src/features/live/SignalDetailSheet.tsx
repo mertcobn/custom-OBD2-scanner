@@ -9,6 +9,7 @@ import { Button } from '@/ui/Button';
 import { Badge, Row } from '@/ui/controls';
 import { Sheet } from '@/ui/Sheet';
 import { TimeChart } from '@/ui/TimeChart';
+import { CATEGORY_COLOR } from '@/lib/categoryColor';
 
 export function SignalDetailSheet({ id, onClose }: { id?: string; onClose: () => void }) {
   const { t } = useTranslation();
@@ -47,7 +48,7 @@ export function SignalDetailSheet({ id, onClose }: { id?: string; onClose: () =>
     const f = formatSignal(sig, v, units, lang);
     return `${f.text} ${f.unit}`.trim();
   };
-  const series = [{ label: loc(sig.short, lang), values: chart.y }];
+  const series = [{ label: loc(sig.short, lang), values: chart.y, color: getComputedStyle(document.documentElement).getPropertyValue(CATEGORY_COLOR[sig.category].slice(4, -1)).trim() || undefined }];
 
   return (
     <Sheet open={!!id} onClose={onClose} title={loc(sig.name, lang)} kanji="詳細" wide>

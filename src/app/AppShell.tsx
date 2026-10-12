@@ -11,7 +11,7 @@ import { ConnectSheet } from '@/features/connect/ConnectSheet';
 import { ConnectionPill } from '@/features/connect/ConnectionPill';
 import { Hanko } from '@/ui/Hanko';
 import { SakuraShower } from '@/ui/Sakura';
-import { Analytics } from './Analytics';
+import { Analytics, Isolated } from './Analytics';
 import { UpdatePrompt } from './UpdatePrompt';
 
 interface NavItem {
@@ -186,7 +186,9 @@ export function AppShell() {
       <BottomNav />
       <ConnectSheet />
       <SakuraShower trigger={celebrate} />
-      <UpdatePrompt />
+      <Isolated name="update-prompt">
+        <UpdatePrompt />
+      </Isolated>
       <Analytics />
     </div>
   );

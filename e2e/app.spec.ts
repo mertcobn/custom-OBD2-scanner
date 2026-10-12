@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
 
 test('welcome → demo → every tab works', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Aracının sana söylediklerini dinle.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Shindan', level: 1 })).toBeVisible();
   await shot(page, '01-welcome');
 
   await page.getByRole('button', { name: 'Demoyu dene' }).click();

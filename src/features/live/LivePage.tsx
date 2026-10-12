@@ -16,6 +16,7 @@ import { Chip } from '@/ui/controls';
 import { EmptyState, PageHeader } from '@/ui/layout';
 import { Sparkline } from '@/ui/Sparkline';
 import { SignalDetailSheet } from './SignalDetailSheet';
+import { CATEGORY_COLOR } from '@/lib/categoryColor';
 
 type Filter = 'all' | 'pinned' | SignalCategory;
 
@@ -123,6 +124,7 @@ function LiveList() {
             .map((f) => (
               <Chip key={f} active={filter === f} onClick={() => setFilter(f)} count={counts[f] ?? 0}>
                 {f === 'pinned' && <Star size={13} />}
+                {f !== 'all' && f !== 'pinned' && <span className="size-2 rounded-full" style={{ background: CATEGORY_COLOR[f] }} aria-hidden />}
                 {t(`categories.${f}`)}
               </Chip>
             ))}
@@ -179,6 +181,7 @@ function LiveRow({ id, onOpen, onVisible }: { id: string; onOpen: () => void; on
         <Star size={17} fill={isPinned ? 'currentColor' : 'none'} />
       </button>
       <button onClick={onOpen} className="flex min-h-16 min-w-0 flex-1 items-center gap-3 py-2 pr-4 text-left hover:bg-surface-2/60">
+        <span className="h-8 w-1 shrink-0 rounded-full" style={{ background: CATEGORY_COLOR[sig.category] }} aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] text-ink">{loc(sig.name, lang)}</span>
           <span className="num block text-xs text-ink-faint">
@@ -186,7 +189,7 @@ function LiveRow({ id, onOpen, onVisible }: { id: string; onOpen: () => void; on
           </span>
         </span>
         <span className="hidden sm:block">
-          <Sparkline points={history} color={h === 'high' ? 'var(--beni)' : 'var(--ai)'} />
+          <Sparkline points={history} color={CATEGORY_COLOR[sig.category]} />
         </span>
         <span className="w-28 shrink-0 text-right">
           <span className={cx('num text-lg font-medium', h === 'high' && 'text-beni', h === 'low' && 'text-ai', !reading && 'text-ink-faint')}>

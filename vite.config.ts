@@ -42,6 +42,8 @@ export default defineConfig({
     }),
   ],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  // Open-source app: ship source maps so production stack traces point at real code.
+  build: { sourcemap: true },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
