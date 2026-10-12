@@ -221,6 +221,13 @@ export const en = {
       unsupported_other: '{{count}} monitors not supported by this car',
       ignition: { spark: 'Spark ignition (petrol)', compression: 'Compression ignition (diesel)' },
     },
+    log: {
+      open: 'Adapter log',
+      title: 'Adapter log',
+      hint: 'The last commands sent to the adapter (>) and its raw answers (<). Useful when something does not work — copy it and share it.',
+      copy: 'Copy full log',
+      empty: 'Nothing yet.',
+    },
     reportTitle: 'Diagnosis report',
     reportBody: 'Fault codes, readiness, freeze frame and vehicle identity as a PDF — or as an AI-ready pack. For a full picture, record a drive on the Record tab.',
     adapter: {
@@ -351,6 +358,11 @@ export const en = {
       linkDrops_one: 'The adapter connection dropped {{count}} time during the recording.',
       linkDrops_other: 'The adapter connection dropped {{count}} times during the recording.',
     },
+  },
+  pwa: {
+    update: 'A new version of Shindan is ready.',
+    reload: 'Update',
+    offline: 'Shindan now works offline too.',
   },
   settings: {
     language: 'Language',

@@ -18,6 +18,7 @@
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource/shippori-mincho": "^5.3.0",
     "@fontsource/zen-kaku-gothic-new": "^5.3.1",
+    "@vercel/analytics": "^2.0.1",
     "fflate": "^0.8.3",
     "i18next": "^26.4.4",
     "idb": "^8.0.4",
@@ -31,6 +32,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@tailwindcss/vite": "^4.3.3",
@@ -51,6 +53,8 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",
-    "vitest": "^5.0.4"
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.4",
+    "workbox-window": "^7.4.1"
   }
 }

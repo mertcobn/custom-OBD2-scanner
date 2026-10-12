@@ -223,6 +223,13 @@ export const tr: Messages = {
       unsupported_other: '{{count}} monitör bu araçta desteklenmiyor',
       ignition: { spark: 'Buji ateşlemeli (benzinli)', compression: 'Sıkıştırma ateşlemeli (dizel)' },
     },
+    log: {
+      open: 'Adaptör günlüğü',
+      title: 'Adaptör günlüğü',
+      hint: 'Adaptöre gönderilen son komutlar (>) ve ham yanıtları (<). Bir şey çalışmadığında işe yarar; kopyalayıp paylaş.',
+      copy: 'Tüm günlüğü kopyala',
+      empty: 'Henüz kayıt yok.',
+    },
     reportTitle: 'Teşhis raporu',
     reportBody: 'Arıza kodları, hazırlık durumu, donmuş kare ve araç kimliği; PDF olarak ya da yapay zekâya hazır paket halinde. Tam bir resim için Kayıt sekmesinden bir sürüş kaydet.',
     adapter: {
@@ -353,6 +360,11 @@ export const tr: Messages = {
       linkDrops_one: 'Kayıt sırasında adaptör bağlantısı {{count}} kez koptu.',
       linkDrops_other: 'Kayıt sırasında adaptör bağlantısı {{count}} kez koptu.',
     },
+  },
+  pwa: {
+    update: 'Shindan’ın yeni sürümü hazır.',
+    reload: 'Güncelle',
+    offline: 'Shindan artık çevrimdışı da çalışıyor.',
   },
   settings: {
     language: 'Dil',

@@ -5,6 +5,9 @@ arıza kodlarını gösteren/silen, sürüş kaydedip PDF ve yapay zekâya hazı
 olarak dışa aktaran web uygulaması. Hesap ve sunucu yoktur; veriler cihazda kalır.
 
 - Ürün ve teknik plan: [`docs/PLAN.md`](docs/PLAN.md)
+- Vercel kurulumu: [`docs/DEPLOY.md`](docs/DEPLOY.md)
+- Gerçek araçla test listesi: [`docs/PHYSICAL_TEST.md`](docs/PHYSICAL_TEST.md)
+- Örnek çıktılar: [`docs/samples/`](docs/samples)
 - Desteklenen tarayıcılar: Chrome / Edge / Opera / Samsung Internet (Android, Windows, macOS, Linux).
   iPhone/iPad'de Bluetooth için **Bluefy** tarayıcısı gerekir. Demo modu her yerde çalışır.
 

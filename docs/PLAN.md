@@ -453,4 +453,13 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
   - **Hata düzeltmesi:** Kayıt, bağlantı sonrası arıza kodu okuması bitmeden başlarsa rapor "0 arıza" diyordu;
     anlık görüntü artık kayıt bitiminde güncelleniyor.
   - Örnek çıktılar: `docs/samples/demo-report.pdf`, `docs/samples/demo-ai-pack.zip`.
+- **Faz 6** ✅ Yayına hazırlık:
+  - PWA: manifest + hanko simgeleri (maskable dahil), Workbox ön önbellek (~1,8 MB, tüm sayfalar ve PDF fontları),
+    çevrimdışı açılış; "yeni sürüm hazır" sorusu (kayıt sırasında asla).
+  - Gizlilik dostu analitik: Vercel Web Analytics yalnızca production'da ve kullanıcı izin verdiyse;
+    anonim olaylar (bağlantı başarısı/hatası, dışa aktarım türü). Araç verisi asla gönderilmez.
+  - Güvenlik: sıkı CSP (satır içi script yok), Permissions-Policy, X-Frame-Options, COOP; CSP E2E testi.
+  - Erişilebilirlik: axe taraması (WCAG 2 A/AA) iki temada temiz; renk token'ları AA kontrastına göre ayarlandı.
+  - Adaptör trafik günlüğü (Araç sayfası, kopyalanabilir; AI paketinde `adapter_log.txt`).
+  - Belgeler: `docs/DEPLOY.md` (Vercel kurulumu), `docs/PHYSICAL_TEST.md` (Faz 7 kontrol listesi).
 

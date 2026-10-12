@@ -11,6 +11,8 @@ import { ConnectSheet } from '@/features/connect/ConnectSheet';
 import { ConnectionPill } from '@/features/connect/ConnectionPill';
 import { Hanko } from '@/ui/Hanko';
 import { SakuraShower } from '@/ui/Sakura';
+import { Analytics } from './Analytics';
+import { UpdatePrompt } from './UpdatePrompt';
 
 interface NavItem {
   to: string;
@@ -34,7 +36,7 @@ function NavBadge({ item }: { item: NavItem }) {
   const recording = useRecording((s) => s.status === 'recording');
   if (item.key === 'dtc' && dtcCount > 0)
     return (
-      <span className="num absolute -top-1 -right-2 grid h-4 min-w-4 place-items-center rounded-full bg-beni px-1 text-[10px] font-semibold text-white">
+      <span className="num absolute -top-1 -right-2 grid h-4 min-w-4 place-items-center rounded-full bg-beni px-1 text-[10px] font-semibold text-on-accent">
         {dtcCount}
       </span>
     );
@@ -184,6 +186,8 @@ export function AppShell() {
       <BottomNav />
       <ConnectSheet />
       <SakuraShower trigger={celebrate} />
+      <UpdatePrompt />
+      <Analytics />
     </div>
   );
 }

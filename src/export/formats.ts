@@ -235,6 +235,7 @@ through an ELM327-compatible Bluetooth adapter. It is designed to be analysed by
 | \`session.json\` | Complete structured data (schema \`${SCHEMA}\`): vehicle, adapter, DTCs with descriptions, readiness, freeze frame, per-signal metadata and statistics, and the full time series. |
 | \`samples_long.csv\` | Every reading, one per row: \`t_ms, iso_time, signal, value, unit\`. Lossless. |
 | \`timeline.csv\` | All signals aligned on a 0.5 s grid (latest value, blank if stale). Convenient for correlation and spreadsheets. |
+| \`adapter_log.txt\` | (If present) raw ELM327 commands and answers — for troubleshooting the connection, not for vehicle analysis. |
 
 ## Conventions
 - Values are in base units: km/h, °C, kPa, g/s, L/h, V, %, rpm, λ (lambda), s, km.
