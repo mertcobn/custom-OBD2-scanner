@@ -440,4 +440,17 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
   - Sayfa kapanırsa: açılışta kayıt "yarıda kaldı" olarak son yazılan noktada kapatılır; kullanıcı görene kadar uyarı kalır.
   - BLE otomatik yeniden bağlanma: aynı cihaza 3 deneme, hızlı yeniden başlatma (bilinen protokolle `ATSP`).
   - Testler: kayıt motoru (fake-indexeddb), yeniden bağlanma/vazgeçme, E2E: yeniden yükleme sonrası kurtarma.
+- **Faz 5** ✅ Dışa aktarım:
+  - **PDF rapor** (jsPDF, istemci tarafı): kapak + hanko, araç kutusu, durum kartları, bulgular, DTC tablosu,
+    donmuş kare, readiness, istatistik tablosu, sinyal başına vektör grafik (ortak zaman ekseni, işaret çizgileri),
+    işaretler, ek (desteklenen sinyaller, sözlük, uyarı). Türkçe karakterli gömülü fontlar (alt küme, ~130 KB, OFL).
+  - **AI paketi (ZIP)**: `README.md` (AI'ya yönelik açıklama + önerilen prompt), `summary.md`, `session.json`
+    (`shindan.session/v1`), `samples_long.csv` (kayıpsız), `timeline.csv` (0,5 sn ızgara).
+  - **CSV**: Excel uyumlu (UTF-8 BOM), birimli sütun başlıkları.
+  - **Bulgular**: temkinli kural tabanlı gözlemler (MIL, DTC, yakıt düzeltmesi fakir/zengin, aşırı ısınma/termostat,
+    şarj voltajı, O2 salınımı, readiness, bağlantı kopmaları).
+  - Araç sayfasından kayıtsız "anlık teşhis raporu" (PDF / AI paketi); telefonlarda Paylaş (Web Share) desteği.
+  - **Hata düzeltmesi:** Kayıt, bağlantı sonrası arıza kodu okuması bitmeden başlarsa rapor "0 arıza" diyordu;
+    anlık görüntü artık kayıt bitiminde güncelleniyor.
+  - Örnek çıktılar: `docs/samples/demo-report.pdf`, `docs/samples/demo-ai-pack.zip`.
 

@@ -8,6 +8,9 @@ import { useLive } from '@/state/live';
 import { useSettings } from '@/state/settings';
 import { useUi } from '@/state/ui';
 import { useVehicle } from '@/state/vehicle';
+import { captureSnapshot } from '@/state/recording';
+import { buildSnapshotDataset } from '@/export/dataset';
+import { ExportPanel } from '@/features/export/ExportPanel';
 import { formatNumber } from '@/units/units';
 import { Button } from '@/ui/Button';
 import { Card, Row, SectionTitle } from '@/ui/controls';
@@ -41,6 +44,11 @@ export function VehiclePage() {
         <ReadinessCard />
         <AdapterCard />
       </div>
+      <Card className="p-5">
+        <SectionTitle kanji="報告">{t('vehicle.reportTitle')}</SectionTitle>
+        <p className="-mt-2 mb-4 text-sm text-ink-muted">{t('vehicle.reportBody')}</p>
+        <ExportPanel kinds={['pdf', 'ai']} getDataset={async () => buildSnapshotDataset(captureSnapshot())} />
+      </Card>
     </div>
   );
 }
