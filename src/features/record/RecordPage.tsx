@@ -87,6 +87,8 @@ function Wizard() {
                 aria-pressed={active}
                 className={cx(
                   'card relative flex flex-col items-start gap-2 p-4 text-left transition-all',
+                  // Odd one out on the 2-column phone grid: span the full row instead of leaving a hole.
+                  p.id === 'custom' && 'col-span-2 sm:col-span-1',
                   active ? 'border-ink ring-1 ring-ink' : 'hover:border-ink-faint',
                 )}
               >

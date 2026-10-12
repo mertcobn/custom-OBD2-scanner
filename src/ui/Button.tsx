@@ -13,9 +13,10 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 const SIZES: Record<Size, string> = {
-  sm: 'h-9 px-3 text-sm gap-1.5 rounded-xl',
-  md: 'h-11 px-4 text-[15px] gap-2 rounded-2xl',
-  lg: 'h-14 px-6 text-base gap-2.5 rounded-2xl',
+  // min-h (not h): a label that has to wrap makes the button taller instead of spilling out.
+  sm: 'min-h-9 px-3 py-1.5 text-sm gap-1.5 rounded-xl whitespace-nowrap',
+  md: 'min-h-11 px-4 py-2 text-[15px] gap-2 rounded-2xl',
+  lg: 'min-h-14 px-6 py-3 text-base gap-2.5 rounded-2xl',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -31,7 +32,7 @@ export function Button({ variant = 'secondary', size = 'md', icon, block, classN
       type="button"
       {...rest}
       className={cx(
-        'inline-flex select-none items-center justify-center font-medium transition-colors duration-150 disabled:opacity-45',
+        'inline-flex select-none items-center justify-center text-center leading-tight font-medium transition-colors duration-150 disabled:opacity-45',
         VARIANTS[variant],
         SIZES[size],
         block && 'w-full',

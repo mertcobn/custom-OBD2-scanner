@@ -238,7 +238,7 @@ export const en = {
     signalCount_one: '{{count}} signal',
     signalCount_other: '{{count}} signals',
     editSignals: 'Choose signals',
-    untilStop: 'Until I stop',
+    untilStop: 'No limit',
     minutes_one: '{{count}} min',
     minutes_other: '{{count}} min',
     estimate: 'Fast signals ≈ {{hz}} Hz, slow ones (temperatures) ≈ {{slow}} Hz.',
