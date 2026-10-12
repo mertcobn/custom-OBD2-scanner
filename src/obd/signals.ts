@@ -44,6 +44,8 @@ export interface SignalDef {
   /** Formula as text — exported so humans/AI can audit the decoding. */
   formula: string;
   decode: (d: number[]) => number;
+  /** Optional check that the raw bytes carry a value (e.g. O2 trim B=FF means "not used"). */
+  valid?: (d: number[]) => boolean;
   /** Typical healthy range in base units — used for colouring and reports. Optional. */
   normal?: [number, number];
 }
@@ -243,7 +245,7 @@ const defs: Def[] = [
     {
       id: `o2Trim${s}`, pid, bytes: 2, quantity: 'percent', min: -100, max: 99.2, digits: 1, category: 'emissions', tier: 'medium',
       name: { tr: `O2 sensör yakıt düzeltmesi ${s}`, en: `O2 sensor fuel trim ${s}` }, short: { tr: `O2 trim ${s}`, en: `O2 trim ${s}` },
-      formula: '(B-128)*100/128', decode: (d) => trim(d[1] ?? 128),
+      formula: '(B-128)*100/128', decode: (d) => trim(d[1] ?? 128), valid: (d) => d.length > 1 && d[1] !== 0xff,
     },
   ]),
   ...([

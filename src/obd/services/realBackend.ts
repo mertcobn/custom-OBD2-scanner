@@ -1,21 +1,284 @@
-import { useConnection } from '@/state/connection';
+import { useConnection, type ConnectErrorCode } from '@/state/connection';
+import { useLive } from '@/state/live';
+import { useVehicle } from '@/state/vehicle';
 import type { ObdBackend } from '@/obd/controller';
-import type { TransportKind } from '@/obd/types';
+import { Elm327, ElmError, parseVersion, parseVoltage, type ElmLogEntry } from '@/obd/elm/elm327';
+import { findPidData, frameFormatFor, parseResponse, protocolName, sortEcus, type EcuMessage, type FrameFormat } from '@/obd/protocol/frames';
+import { decodeSupportedMask, hasNextRange, signalsForPids } from '@/obd/protocol/supported';
+import { SIGNAL_BY_ID } from '@/obd/signals';
+import { BleTransport } from '@/obd/transport/ble';
+import { SerialTransport } from '@/obd/transport/serial';
+import { SimTransport } from '@/obd/transport/sim';
+import { TransportError, type Transport } from '@/obd/transport/types';
+import type { Sample } from '@/obd/types';
+import { sampleBus } from './bus';
+import { PollScheduler } from './scheduler';
 
-/** Placeholder until the transport + ELM327 driver lands (Phase 2). */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export type RealTarget = 'ble' | 'bleAll' | 'serial' | 'sim';
+
+function makeTransport(target: RealTarget): Transport {
+  switch (target) {
+    case 'ble':
+      return new BleTransport();
+    case 'bleAll':
+      return new BleTransport({ acceptAll: true });
+    case 'serial':
+      return new SerialTransport();
+    case 'sim':
+      return new SimTransport();
+  }
+}
+
+class ConnectFailure extends Error {
+  constructor(
+    readonly code: ConnectErrorCode,
+    message?: string,
+  ) {
+    super(message ?? code);
+  }
+}
+
+/** Raw traffic ring buffer — exported with recordings so problems can be diagnosed later. */
+export const trafficLog: ElmLogEntry[] = [];
+const TRAFFIC_MAX = 400;
+
+/**
+ * Real connection: transport → ELM327 driver → OBD protocol, feeding the stores and sample bus.
+ */
 export class RealBackend implements ObdBackend {
-  constructor(private readonly kind: TransportKind) {}
+  readonly transport: Transport;
+  private elm: Elm327;
+  private format: FrameFormat = 'can11';
+  private scheduler = new PollScheduler();
+  private watched: string[] = [];
+  private supportedPids = new Set<number>();
+  private alive = true;
+  private polling = false;
+  private paused = 0;
+  private responses: number[] = [];
+  private consecutiveFailures = 0;
+
+  constructor(
+    readonly target: RealTarget,
+    transport?: Transport,
+  ) {
+    this.transport = transport ?? makeTransport(target);
+    this.elm = new Elm327(this.transport);
+    this.elm.log = (e) => {
+      trafficLog.push(e);
+      if (trafficLog.length > TRAFFIC_MAX) trafficLog.splice(0, trafficLog.length - TRAFFIC_MAX);
+    };
+  }
 
   async connect(): Promise<void> {
     const c = useConnection.getState();
-    c.begin(this.kind, false);
-    c.step('device', 'active');
-    c.fail('unknown', 'Hardware connection is not available yet.');
-    throw new Error('not implemented');
+    c.begin(this.transport.kind, this.transport.kind === 'sim');
+    try {
+      c.step('device', 'active');
+      await this.transport.connect();
+      if (!this.alive) return;
+      c.step('device', 'done', this.transport.deviceName);
+      this.transport.onClose((err) => this.onClosed(err));
+
+      c.step('adapter', 'active');
+      const version = await this.initAdapter();
+      c.step('adapter', 'done', version);
+
+      c.step('protocol', 'active');
+      const protocol = await this.detectProtocol();
+      c.step('protocol', 'done', protocol);
+
+      c.step('vehicle', 'active');
+      const ecus = await this.discover();
+      c.step('vehicle', 'done', ecus.join(', '));
+
+      const voltage = parseVoltage(await this.elm.at('ATRV'));
+      useVehicle.getState().setInfo({ ...useVehicle.getState().info, protocol, ecus });
+      c.connected({ transport: this.transport.kind, name: this.transport.deviceName, elmVersion: version, voltage }, protocol);
+      void this.afterConnect();
+      void this.pollLoop();
+    } catch (e) {
+      const failure = this.toFailure(e);
+      // Closing the browser's device picker is not an error worth showing.
+      if (failure.code === 'cancelled') useConnection.getState().reset();
+      else useConnection.getState().fail(failure.code, failure.message === failure.code ? undefined : failure.message);
+      await this.shutdown();
+      throw failure;
+    }
   }
 
-  async disconnect(): Promise<void> {}
-  setWatched(): void {}
+  /** Hook for vehicle info / DTC reads after the link is up (Phase 3). */
+  protected async afterConnect(): Promise<void> {}
+
+  private toFailure(e: unknown): ConnectFailure {
+    if (e instanceof ConnectFailure) return e;
+    if (e instanceof TransportError) return new ConnectFailure(e.code === 'lost' ? 'lost' : e.code, e.message);
+    if (e instanceof ElmError) {
+      if (e.code === 'unableToConnect' || e.code === 'noData' || e.code === 'busError' || e.code === 'canError')
+        return new ConnectFailure('noVehicle', e.message);
+      if (e.code === 'timeout') return new ConnectFailure('adapterSilent', e.message);
+      if (e.code === 'closed') return new ConnectFailure('lost', e.message);
+    }
+    return new ConnectFailure('unknown', e instanceof Error ? e.message : String(e));
+  }
+
+  private async initAdapter(): Promise<string> {
+    // Some clones need a moment after the link comes up; a bare CR flushes any partial input.
+    await this.transport.write('\r').catch(() => undefined);
+    await sleep(this.transport.kind === 'sim' ? 0 : 200);
+    let reset: string[] | undefined;
+    for (let attempt = 0; attempt < 2 && !reset; attempt++) reset = await this.elm.at('ATZ', 3000);
+    if (!reset) throw new ConnectFailure('adapterSilent');
+    await this.elm.at('ATE0');
+    await this.elm.at('ATL0');
+    await this.elm.at('ATS1'); // keep spaces: more robust parsing across clones
+    await this.elm.at('ATH1'); // headers: tell ECUs apart, needed for multi-frame
+    await this.elm.at('ATAT1'); // adaptive timing
+    await this.elm.at('ATSP0'); // automatic protocol search
+    const version = parseVersion(await this.elm.at('ATI')) ?? parseVersion(reset) ?? 'ELM327';
+    return version;
+  }
+
+  private async detectProtocol(): Promise<string> {
+    // The first request triggers the protocol search, which can take several seconds.
+    await this.elm.send('0100', { timeoutMs: 12000 });
+    const dpn = (await this.elm.at('ATDPN'))?.[0] ?? '6';
+    this.format = frameFormatFor(dpn);
+    return protocolName(dpn);
+  }
+
+  private async request(cmd: string, timeoutMs = 2000): Promise<EcuMessage[]> {
+    const lines = await this.elm.send(cmd, { timeoutMs });
+    return parseResponse(lines, this.format);
+  }
+
+  private async discover(): Promise<string[]> {
+    const ecus = new Set<string>();
+    const pids = new Set<number>();
+    for (let base = 0; base <= 0xc0; base += 0x20) {
+      let msgs: EcuMessage[];
+      try {
+        msgs = await this.request(`01${base.toString(16).padStart(2, '0').toUpperCase()}`, 4000);
+      } catch (e) {
+        if (e instanceof ElmError && e.code === 'noData') break;
+        throw e;
+      }
+      let more = false;
+      for (const m of msgs) {
+        if (m.data[0] !== 0x41 || m.data[1] !== base) continue;
+        ecus.add(m.ecu);
+        const found = decodeSupportedMask(base, m.data.slice(2, 6));
+        found.forEach((p) => pids.add(p));
+        more ||= hasNextRange(base, found);
+      }
+      if (!more) break;
+    }
+    if (ecus.size === 0) throw new ConnectFailure('noVehicle');
+    this.supportedPids = pids;
+    useLive.getState().setSupported(signalsForPids(pids));
+    return sortEcus([...ecus]);
+  }
+
+  setWatched(ids: string[]): void {
+    this.watched = ids;
+    this.scheduler.setWatched(ids.filter((id) => {
+      const s = SIGNAL_BY_ID[id];
+      return !!s && (s.source === 'elm' || this.supportedPids.has(s.pid));
+    }));
+  }
+
+  /** Run a one-off command between poll requests (e.g. DTC read). */
+  protected async exclusive<T>(fn: (elm: Elm327) => Promise<T>): Promise<T> {
+    this.paused++;
+    try {
+      return await fn(this.elm);
+    } finally {
+      this.paused--;
+    }
+  }
+
+  protected requestMessages(cmd: string, timeoutMs?: number) {
+    return this.request(cmd, timeoutMs);
+  }
+
+  private async pollLoop() {
+    if (this.polling) return;
+    this.polling = true;
+    while (this.alive) {
+      const id = this.paused ? undefined : this.scheduler.next();
+      if (!id) {
+        await sleep(this.paused ? 30 : 120);
+        this.updateRate();
+        continue;
+      }
+      await this.pollOne(id);
+      this.updateRate();
+    }
+    this.polling = false;
+  }
+
+  private async pollOne(id: string) {
+    const sig = SIGNAL_BY_ID[id];
+    if (!sig) return;
+    const now = Date.now();
+    try {
+      if (sig.source === 'elm') {
+        const v = parseVoltage(await this.elm.send('ATRV', { timeoutMs: 1500, raw: true }));
+        if (v !== undefined) {
+          sampleBus.emit([{ t: now, id, v }]);
+          useConnection.getState().setVoltage(v);
+        }
+      } else {
+        const pidHex = sig.pid.toString(16).padStart(2, '0').toUpperCase();
+        const msgs = await this.request(`01${pidHex}`, 1500);
+        const hit = findPidData(msgs, 0x41, sig.pid);
+        if (hit) {
+          const samples: Sample[] = [];
+          for (const sib of PollScheduler.siblings(id, this.watched)) {
+            const s = SIGNAL_BY_ID[sib]!;
+            if (hit.data.length === 0 || (s.valid && !s.valid(hit.data))) continue;
+            const v = s.decode(hit.data);
+            if (Number.isFinite(v)) samples.push({ t: now, id: sib, v });
+          }
+          sampleBus.emit(samples);
+        }
+      }
+      this.responses.push(now);
+      this.consecutiveFailures = 0;
+      if (useConnection.getState().status === 'reconnecting') useConnection.getState().setStatus('connected');
+    } catch (e) {
+      if (e instanceof ElmError && (e.code === 'closed' || e.code === 'noData')) return; // closed, or PID not answered right now
+      this.consecutiveFailures++;
+      // Many failures in a row: the car went quiet (ignition off?) or the link is degrading.
+      if (this.consecutiveFailures >= 8 && useConnection.getState().status === 'connected') useConnection.getState().setStatus('reconnecting');
+      await sleep(Math.min(1000, 50 * this.consecutiveFailures));
+    }
+  }
+
+  private updateRate() {
+    const now = Date.now();
+    while (this.responses.length && now - this.responses[0]! > 2000) this.responses.shift();
+    useLive.getState().setRate(this.responses.length / 2);
+  }
+
+  private onClosed(err?: Error) {
+    if (!this.alive) return;
+    this.alive = false;
+    if (err) useConnection.getState().fail('lost', err.message);
+  }
+
   async readDtcs(): Promise<void> {}
   async clearDtcs(): Promise<void> {}
+
+  private async shutdown() {
+    this.alive = false;
+    this.elm.dispose();
+    await this.transport.disconnect().catch(() => undefined);
+  }
+
+  async disconnect(): Promise<void> {
+    await this.shutdown();
+  }
 }

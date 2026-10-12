@@ -42,6 +42,7 @@ export const tr: Messages = {
     },
     ble: 'Bluetooth ile bağlan',
     serial: 'Klasik Bluetooth / USB (seri port)',
+    bleAll: 'Adaptörüm listede yok, tüm cihazları göster',
     demo: 'Demo modunu dene — araç gerekmez',
     waitHint: 'Adaptörle konuşuluyor. Genellikle birkaç saniye sürer.',
     steps: { device: 'Adaptör bulundu', adapter: 'Adaptör hazırlandı', protocol: 'Araç protokolü belirlendi', vehicle: 'Araç yanıt verdi' },
