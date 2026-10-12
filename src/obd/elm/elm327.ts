@@ -74,6 +74,13 @@ export class Elm327 {
     });
   }
 
+  /** The transport came back (reconnect): accept commands again with a clean slate. */
+  reopen(): void {
+    this.closed = false;
+    this.buffer = '';
+    this.discardUntilPrompt = false;
+  }
+
   dispose(): void {
     this.offData();
     this.offClose();

@@ -1,17 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, FileText, MapPin, Package, RotateCcw, Sheet as SheetIcon, Trash2 } from 'lucide-react';
 import { SIGNAL_BY_ID } from '@/obd/signals';
 import { formatDuration, formatSignal, loc, LOCALE, signalUnit, useDisplayValue } from '@/lib/format';
 import { computeStats } from '@/lib/stats';
-import { useRecording, type RecordingSession } from '@/state/recording';
+import type { Sample } from '@/obd/types';
+import { useRecording, type SessionMeta } from '@/state/recording';
 import { useSettings } from '@/state/settings';
 import { formatNumber } from '@/units/units';
 import { Button } from '@/ui/Button';
 import { Badge, Card, Chip, SectionTitle } from '@/ui/controls';
 import { TimeChart } from '@/ui/TimeChart';
 
-export function SessionSummary({ session, onBack, fresh }: { session: RecordingSession; onBack: () => void; fresh?: boolean }) {
+export function SessionSummary({ session, onBack, fresh }: { session: SessionMeta; onBack: () => void; fresh?: boolean }) {
   const { t } = useTranslation();
   const lang = useSettings((s) => s.language);
   const units = useSettings((s) => s.units);
@@ -19,17 +20,28 @@ export function SessionSummary({ session, onBack, fresh }: { session: RecordingS
   const remove = useRecording((s) => s.removeSession);
   const signals = useMemo(() => session.config.signals.filter((id) => SIGNAL_BY_ID[id]), [session.config.signals]);
   const [chartId, setChartId] = useState(signals[0]);
+  const [samples, setSamples] = useState<Sample[]>();
+  useEffect(() => {
+    let alive = true;
+    void useRecording
+      .getState()
+      .loadSamples(session.id)
+      .then((s) => alive && setSamples(s));
+    return () => {
+      alive = false;
+    };
+  }, [session.id]);
   const duration = ((session.endedAt ?? session.startedAt) - session.startedAt) / 1000;
 
   const bySignal = useMemo(() => {
     const m: Record<string, { t: number[]; v: number[] }> = {};
-    for (const s of session.samples) {
+    for (const s of samples ?? []) {
       const e = (m[s.id] ??= { t: [], v: [] });
       e.t.push(s.t);
       e.v.push(s.v);
     }
     return m;
-  }, [session.samples]);
+  }, [samples]);
 
   const stats = useMemo(() => Object.fromEntries(signals.map((id) => [id, computeStats(bySignal[id]?.v ?? [])])), [bySignal, signals]);
 
@@ -53,14 +65,22 @@ export function SessionSummary({ session, onBack, fresh }: { session: RecordingS
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-serif text-xl font-semibold">{fresh ? t('record.finishedTitle') : t('record.sessionTitle')}</h2>
           <Badge tone="sakura">{t(`record.presets.${session.config.preset}.title`)}</Badge>
+          {session.status === 'interrupted' && <Badge tone="kin">{t('record.interrupted')}</Badge>}
+          {session.snapshot.demo && <Badge>{t('common.demo')}</Badge>}
         </div>
         <p className="mt-1 text-sm text-ink-muted">
           {new Date(session.startedAt).toLocaleString(LOCALE[lang], { dateStyle: 'full', timeStyle: 'short' })}
         </p>
+        {session.events.some((e) => e.type === 'paused') && (
+          <p className="mt-3 rounded-2xl bg-kin-soft px-3 py-2 text-sm">
+            {t('record.pauses', { count: session.events.filter((e) => e.type === 'paused').length })}
+          </p>
+        )}
+        {!samples && <p className="mt-3 text-sm text-ink-muted">{t('record.loading')}</p>}
         <dl className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             [t('record.duration'), formatDuration(duration)],
-            [t('record.samples'), formatNumber(session.samples.length, 0, LOCALE[lang])],
+            [t('record.samples'), formatNumber(samples?.length ?? session.sampleCount, 0, LOCALE[lang])],
             [t('record.signals'), String(signals.length)],
             [t('record.markers'), String(session.markers.length)],
           ].map(([k, v]) => (
@@ -175,7 +195,7 @@ export function SessionSummary({ session, onBack, fresh }: { session: RecordingS
         className="self-center text-beni"
         icon={<Trash2 size={16} />}
         onClick={() => {
-          remove(session.id);
+          void remove(session.id);
           if (fresh) useRecording.getState().discard();
           onBack();
         }}

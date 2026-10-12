@@ -105,12 +105,31 @@ describe('RealBackend over the simulated adapter', () => {
     expect(got).toEqual([]);
   });
 
-  it('reports a lost link', async () => {
+  it('reconnects after the adapter drops and keeps polling', async () => {
     const t = new SimTransport({ latencyMs: 1 });
-    backend = new RealBackend('sim', t);
+    backend = new RealBackend('sim', t, { reconnectDelayMs: 20 });
     await backend.connect();
-    // Simulate the adapter disappearing (not a user disconnect).
-    (t as unknown as { close: { emit: (e: Error) => void } }).close.emit(new Error('gone'));
+    backend.setWatched(['rpm']);
+    t.simulateDrop();
+    expect(useConnection.getState().status).toBe('reconnecting');
+    await wait(300);
+    expect(useConnection.getState().status).toBe('connected');
+    const got: Sample[] = [];
+    const off = sampleBus.subscribe((s) => got.push(...s));
+    await wait(150);
+    off();
+    expect(got.some((s) => s.id === 'rpm')).toBe(true);
+  });
+
+  it('gives up and reports a lost link when reconnecting fails', async () => {
+    const t = new SimTransport({ latencyMs: 1 });
+    t.reconnect = async () => {
+      throw new Error('out of range');
+    };
+    backend = new RealBackend('sim', t, { reconnectDelayMs: 5, reconnectAttempts: 2 });
+    await backend.connect();
+    t.simulateDrop();
+    await wait(200);
     expect(useConnection.getState().status).toBe('error');
     expect(useConnection.getState().error?.code).toBe('lost');
   });

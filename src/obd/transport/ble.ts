@@ -151,6 +151,13 @@ export class BleTransport implements Transport {
     return undefined;
   }
 
+  async reconnect(): Promise<void> {
+    if (!this.device?.gatt) throw new TransportError('lost');
+    this.notifier?.removeEventListener('characteristicvaluechanged', this.onNotify);
+    this.decoder = new TextDecoder();
+    await this.openGatt();
+  }
+
   private onNotify = (ev: Event) => {
     const value = (ev.target as Char).value;
     if (value) this.data.emit(this.decoder.decode(value, { stream: true }));

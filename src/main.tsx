@@ -16,9 +16,13 @@ import '@fontsource-variable/jetbrains-mono';
 import './styles/index.css';
 import './i18n';
 import { App } from './app/App';
+import { useRecording } from './state/recording';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>,
 );
+
+// Load saved recordings and close any that were interrupted by a reload or crash.
+void useRecording.getState().init();

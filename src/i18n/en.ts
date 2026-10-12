@@ -279,6 +279,13 @@ export const en = {
     stats: 'Statistics',
     signal: 'Signal',
     deleteSession: 'Delete this recording',
+    interrupted: 'Interrupted',
+    recovered_one: 'A recording was interrupted (the page closed). The data up to that moment was saved.',
+    recovered_other: '{{count}} recordings were interrupted (the page closed). The data up to that moment was saved.',
+    recoveredOpen: 'Open it',
+    pauses_one: 'The connection dropped {{count}} time; gaps are marked in the data.',
+    pauses_other: 'The connection dropped {{count}} times; gaps are marked in the data.',
+    loading: 'Loading data…',
   },
   export: {
     title: 'Export',

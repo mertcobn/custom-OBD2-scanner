@@ -66,6 +66,17 @@ export class SimTransport implements Transport {
     for (let i = 0; i < out.length; i += size) this.data.emit(out.slice(i, i + size));
   }
 
+  /** Test/demo helper: the adapter drops off as if it went out of range. */
+  simulateDrop(): void {
+    this.open = false;
+    this.close.emit(new Error('simulated drop'));
+  }
+
+  async reconnect(): Promise<void> {
+    this.open = true;
+    this.pending = '';
+  }
+
   onData(cb: (chunk: string) => void) {
     return this.data.add(cb);
   }

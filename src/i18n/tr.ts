@@ -281,6 +281,13 @@ export const tr: Messages = {
     stats: 'İstatistikler',
     signal: 'Sinyal',
     deleteSession: 'Bu kaydı sil',
+    interrupted: 'Yarıda kaldı',
+    recovered_one: 'Bir kayıt yarıda kaldı (sayfa kapandı). O ana kadarki veriler kurtarıldı.',
+    recovered_other: '{{count}} kayıt yarıda kaldı (sayfa kapandı). O ana kadarki veriler kurtarıldı.',
+    recoveredOpen: 'Kaydı aç',
+    pauses_one: 'Bağlantı {{count}} kez koptu; boşluklar veride işaretli.',
+    pauses_other: 'Bağlantı {{count}} kez koptu; boşluklar veride işaretli.',
+    loading: 'Veriler yükleniyor…',
   },
   export: {
     title: 'Dışa aktar',

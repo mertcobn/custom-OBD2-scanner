@@ -69,10 +69,13 @@ export class RealBackend implements ObdBackend {
   private paused = 0;
   private responses: number[] = [];
   private consecutiveFailures = 0;
+  private dpn = '0';
+  private reconnecting = false;
 
   constructor(
     readonly target: RealTarget,
     transport?: Transport,
+    private readonly opts: { reconnectDelayMs?: number; reconnectAttempts?: number } = {},
   ) {
     this.transport = transport ?? makeTransport(target);
     this.elm = new Elm327(this.transport);
@@ -209,6 +212,7 @@ export class RealBackend implements ObdBackend {
     // The first request triggers the protocol search, which can take several seconds.
     await this.elm.send('0100', { timeoutMs: 12000 });
     const dpn = (await this.elm.at('ATDPN'))?.[0] ?? '6';
+    this.dpn = dpn.replace(/^A/i, '');
     this.format = frameFormatFor(dpn);
     return protocolName(dpn);
   }
@@ -329,8 +333,45 @@ export class RealBackend implements ObdBackend {
 
   private onClosed(err?: Error) {
     if (!this.alive) return;
+    if (err && this.transport.reconnect) {
+      void this.tryReconnect(err);
+      return;
+    }
     this.alive = false;
     if (err) useConnection.getState().fail('lost', err.message);
+  }
+
+  /** Link dropped (out of range, adapter power blip): re-open the same device a few times before giving up. */
+  private async tryReconnect(err: Error) {
+    if (this.reconnecting) return;
+    this.reconnecting = true;
+    this.paused++;
+    useConnection.getState().setStatus('reconnecting');
+    const attempts = this.opts.reconnectAttempts ?? 3;
+    const delay = this.opts.reconnectDelayMs ?? 1500;
+    try {
+      for (let i = 1; i <= attempts && this.alive; i++) {
+        await sleep(delay * i);
+        if (!this.alive) return;
+        try {
+          await this.transport.reconnect!();
+          this.elm.reopen();
+          await this.elm.at('', 1000);
+          if (!(await this.elm.at('ATZ', 3000))) throw new Error('adapter silent');
+          for (const cmd of ['ATE0', 'ATL0', 'ATS1', 'ATH1', 'ATAT1', `ATSP${this.dpn}`]) await this.elm.at(cmd);
+          useConnection.getState().setStatus('connected');
+          return;
+        } catch {
+          /* next attempt */
+        }
+      }
+      this.alive = false;
+      useConnection.getState().fail('lost', err.message);
+      await this.transport.disconnect().catch(() => undefined);
+    } finally {
+      this.paused--;
+      this.reconnecting = false;
+    }
   }
 
   async readDtcs(): Promise<void> {

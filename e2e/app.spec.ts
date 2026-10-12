@@ -107,3 +107,26 @@ test('no console errors on load', async ({ page }) => {
   }
   expect(errors).toEqual([]);
 });
+
+test('recordings survive a reload; an interrupted one is recovered', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demoyu dene' }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });
+  await page.getByRole('link', { name: 'Kayıt' }).first().click();
+  await page.getByRole('button', { name: 'Kaydı başlat' }).click();
+  await page.waitForTimeout(1500);
+  await page.getByRole('button', { name: 'Durdur' }).click();
+  await expect(page.getByText('Kayıt tamamlandı')).toBeVisible();
+
+  // Start another one and reload mid-way.
+  await page.getByRole('button', { name: 'Yeni kayıt' }).click();
+  await page.getByRole('button', { name: 'Kaydı başlat' }).click();
+  await page.waitForTimeout(2500);
+  await page.reload();
+  await page.goto('/record');
+  await expect(page.getByText(/yarıda kaldı \(sayfa kapandı\)/)).toBeVisible();
+  await expect(page.locator('ul li', { hasText: 'Günlük sürüş' })).toHaveCount(2);
+  await page.getByRole('button', { name: 'Kaydı aç' }).click();
+  await expect(page.getByText('Yarıda kaldı').first()).toBeVisible();
+  await page.screenshot({ path: `test-results/screens/${test.info().project.name}-14-recovered.png`, fullPage: true });
+});
