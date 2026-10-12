@@ -46,13 +46,13 @@ export function ConnectionPill({ variant }: { variant: 'pill' | 'card' }) {
       <button
         onClick={open}
         className={cx(
-          'flex h-10 items-center gap-2 rounded-full border pr-3.5 pl-2 text-sm font-medium transition-colors',
+          'flex h-10 min-w-0 items-center gap-2 rounded-full border pr-3.5 pl-2 text-sm font-medium transition-colors',
           connected ? 'border-line bg-surface' : 'border-line bg-surface text-ink-muted',
         )}
         aria-label={t('connect.open')}
       >
         {seal}
-        <span className="max-w-[8.5rem] truncate">{connected ? voltage ?? label : label}</span>
+        <span className="min-w-0 max-w-[8.5rem] truncate">{connected ? voltage ?? label : label}</span>
       </button>
     );
   }

@@ -66,7 +66,7 @@ export function EnsoGauge({ label, text, unit, value, min, max, health = 'unknow
 
   return (
     <figure
-      className={cx('relative flex aspect-square w-full select-none items-center justify-center', className)}
+      className={cx('@container relative flex aspect-square w-full select-none items-center justify-center', className)}
       aria-label={`${label}: ${text} ${unit}`}
     >
       <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
@@ -99,14 +99,15 @@ export function EnsoGauge({ label, text, unit, value, min, max, health = 'unknow
         <span
           className={cx(
             'num font-medium leading-none tracking-tight text-ink',
-            size === 'lg' ? 'text-[clamp(2.2rem,9vw,3.6rem)]' : 'text-[clamp(1.5rem,6vw,2.35rem)]',
+            // Sized against the gauge itself (cqw), so the text always fits inside the ring at any screen size.
+            'text-[17cqw]',
             !hasValue && 'text-ink-faint',
           )}
         >
           {text}
         </span>
-        <span className="unit mt-1 text-xs font-medium text-ink-muted">{unit || ' '}</span>
-        <span className="mt-1.5 line-clamp-1 max-w-[9rem] text-[13px] text-ink-muted">{label}</span>
+        <span className="unit mt-[1.5cqw] text-[max(10px,6cqw)] font-medium text-ink-muted">{unit || ' '}</span>
+        <span className="mt-[2cqw] line-clamp-1 max-w-[62cqw] text-[max(11px,7cqw)] text-ink-muted">{label}</span>
       </figcaption>
     </figure>
   );

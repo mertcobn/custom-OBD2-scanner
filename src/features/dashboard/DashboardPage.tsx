@@ -23,6 +23,16 @@ import { AmbientPetals } from '@/ui/Sakura';
 
 const MAX_GAUGES = 8;
 
+/** Ensō: a 320° brush arc around (100,100), r = 88, open at the lower right. */
+const ENSO_RING = (() => {
+  const r = 88;
+  const pt = (deg: number) => {
+    const a = (deg * Math.PI) / 180;
+    return `${(100 + r * Math.cos(a)).toFixed(2)} ${(100 + r * Math.sin(a)).toFixed(2)}`;
+  };
+  return `M ${pt(80)} A ${r} ${r} 0 1 1 ${pt(40)}`;
+})();
+
 export function DashboardPage() {
   const connected = useConnection((s) => s.status === 'connected');
   return connected ? <LiveDashboard /> : <Welcome />;
@@ -36,20 +46,15 @@ function Welcome() {
       <AmbientPetals />
       {/* 日の丸 — the red sun, framed by a faint ensō brush circle */}
       <div className="relative mb-10 grid size-44 place-items-center sm:size-52" aria-hidden>
-        <svg viewBox="0 0 200 200" className="absolute inset-0 size-full">
-          <path
-            d="M 58 172 C 14 142 10 76 52 40 C 94 4 164 18 184 72 C 202 120 172 170 118 180"
-            fill="none"
-            stroke="var(--ink)"
-            strokeOpacity="0.14"
-            strokeWidth="10"
-            strokeLinecap="round"
-          />
+        {/* Arc centred exactly on (100,100) so the sun sits in the middle of the brush circle. */}
+        <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" data-testid="enso-ring">
+          <path d={ENSO_RING} fill="none" stroke="var(--ink)" strokeOpacity="0.14" strokeWidth="10" strokeLinecap="round" />
         </svg>
-        <div className="size-28 rounded-full bg-hinomaru shadow-[0_10px_40px_-8px_var(--hinomaru)] sm:size-32" />
+        <div className="size-28 rounded-full bg-hinomaru shadow-[0_10px_40px_-8px_var(--hinomaru)] sm:size-32" data-testid="hinomaru" />
       </div>
       <h1 className="font-serif text-5xl font-bold tracking-tight sm:text-6xl">Shindan</h1>
-      <p className="mt-2 font-serif text-lg tracking-[0.6em] text-sakura-deep" aria-hidden>
+      {/* Letter-spacing also trails the last glyph; the negative margin cancels it so the text stays centred. */}
+      <p className="mt-2 mr-[-0.6em] font-serif text-lg tracking-[0.6em] text-sakura-deep" aria-hidden data-testid="welcome-kanji">
         診断
       </p>
       <p className="mt-4 text-[15px] text-ink-muted">{t('welcome.tagline')}</p>

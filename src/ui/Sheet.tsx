@@ -49,7 +49,7 @@ export function Sheet({
         if (e.target === ref.current) onClose();
       }}
       className={cx(
-        'm-0 mt-auto w-full max-w-none bg-transparent p-0 text-ink backdrop:bg-[rgb(20_18_16/0.42)] backdrop:backdrop-blur-[2px]',
+        'm-0 mt-auto w-full max-w-none border-0 bg-transparent p-0 text-ink backdrop:bg-[rgb(20_18_16/0.42)] backdrop:backdrop-blur-[2px]',
         'sm:m-auto sm:w-[calc(100%-2rem)]',
         wide ? 'sm:max-w-2xl' : 'sm:max-w-lg',
       )}
