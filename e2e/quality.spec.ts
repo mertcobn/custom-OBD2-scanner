@@ -94,3 +94,30 @@ test('works offline after the first visit (PWA)', async ({ page, context }) => {
   await expect(page.getByText('P0301', { exact: true })).toBeVisible({ timeout: 8000 });
   await context.setOffline(false);
 });
+
+test('works in browsers where scroll methods return a Promise (Chrome 15x)', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'one run is enough');
+  // Newer Chrome returns a Promise from scrollTo/scrollBy/scrollIntoView. Emulate it.
+  await page.addInitScript(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const wrap = (fn: (...a: any[]) => unknown) =>
+      function (this: unknown, ...a: unknown[]) {
+        fn.apply(this, a);
+        return Promise.resolve();
+      };
+    window.scrollTo = wrap(window.scrollTo.bind(window)) as typeof window.scrollTo;
+    window.scroll = wrap(window.scroll.bind(window)) as typeof window.scroll;
+    Element.prototype.scrollIntoView = wrap(Element.prototype.scrollIntoView) as typeof Element.prototype.scrollIntoView;
+  });
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demoyu dene' }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });
+  for (const link of ['Canlı veri', 'Arıza', 'Kayıt', 'Araç', 'Gösterge', 'Canlı veri', 'Ayarlar']) {
+    await page.getByRole('link', { name: link }).first().click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Bir şeyler ters gitti')).toHaveCount(0);
+  }
+  expect(errors).toEqual([]);
+});

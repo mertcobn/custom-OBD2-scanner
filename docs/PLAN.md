@@ -469,4 +469,9 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
   - Türkçe karakterler: Shippori Mincho / Zen Kaku Gothic'te ş, ğ, İ yoktu → BIZ UDPMincho + M PLUS 1p (tam Türkçe).
   - Sade açılış (hinomaru + yavaş sakura yaprakları), uzun tanıtım metinleri kaldırıldı.
   - Geleneksel renkler (伝統色): kategori başına renk. Motor 紅, yakıt 抹茶, hava 浅葱, sıcaklık 柿, emisyon 藤, elektrik 金, mesafe 藍.
+- **Kök sebep bulundu: "l is not a function" (Chrome 15x).** Yeni Chrome'da `window.scrollTo` bir Promise döndürüyor.
+  `useEffect(() => window.scrollTo(...))` bu Promise'i React'e temizleme fonksiyonu olarak veriyordu; sayfa değişince
+  React onu çağırıp çöküyordu. Yığın izi production sourcemap ile React'in `destroy_` çağrısına kadar izlendi.
+  Düzeltme: efekt gövdeleri blok; ESLint kuralı ifade gövdeli efektleri yasaklıyor; E2E testi Promise döndüren
+  kaydırma metodlarını taklit ederek tüm sayfalar arasında gezinir.
 

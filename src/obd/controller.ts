@@ -51,7 +51,10 @@ export function watch(ids: string[]): () => void {
 /** React hook: keep the given signals polled while the component is mounted. */
 export function useWatch(ids: string[]): void {
   const key = ids.join(',');
-  useEffect(() => watch(key ? key.split(',') : []), [key]);
+  useEffect(() => {
+    const unwatch = watch(key ? key.split(',') : []);
+    return unwatch;
+  }, [key]);
 }
 
 function createBackend(target: ConnectTarget): ObdBackend {
