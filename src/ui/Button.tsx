@@ -1,0 +1,45 @@
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { cx } from '@/lib/cx';
+
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'sakura';
+type Size = 'sm' | 'md' | 'lg';
+
+const VARIANTS: Record<Variant, string> = {
+  primary: 'bg-ink text-bg hover:bg-ink/90 active:bg-ink/80 shadow-[var(--shadow)]',
+  sakura: 'bg-sakura-deep text-white hover:bg-sakura-deep/90 active:bg-sakura-deep/80 shadow-[var(--shadow)]',
+  secondary: 'bg-surface text-ink border border-line hover:bg-surface-2 active:bg-surface-2',
+  ghost: 'text-ink-muted hover:text-ink hover:bg-surface-2',
+  danger: 'bg-beni text-white hover:bg-beni/90 active:bg-beni/80',
+};
+
+const SIZES: Record<Size, string> = {
+  sm: 'h-9 px-3 text-sm gap-1.5 rounded-xl',
+  md: 'h-11 px-4 text-[15px] gap-2 rounded-2xl',
+  lg: 'h-14 px-6 text-base gap-2.5 rounded-2xl',
+};
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
+  size?: Size;
+  icon?: ReactNode;
+  block?: boolean;
+}
+
+export function Button({ variant = 'secondary', size = 'md', icon, block, className, children, ...rest }: ButtonProps) {
+  return (
+    <button
+      type="button"
+      {...rest}
+      className={cx(
+        'inline-flex select-none items-center justify-center font-medium transition-colors duration-150 disabled:opacity-45',
+        VARIANTS[variant],
+        SIZES[size],
+        block && 'w-full',
+        className,
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="tr" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f1e7" />
+    <meta name="description" content="Shindan — tarayıcıdan Bluetooth ile OBD2 araç teşhisi. Canlı veri, arıza kodları, kayıt ve dışa aktarım." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Shindan · 診断 OBD2</title>
+    <script>
+      // Avoid a light flash for dark-theme users before React mounts.
+      try {
+        var p = JSON.parse(localStorage.getItem('shindan.settings') || '{}').state?.theme || 'system';
+        var d = p === 'dark' || (p === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = d ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
