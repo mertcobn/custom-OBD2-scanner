@@ -1,6 +1,7 @@
 import { strToU8, zipSync } from 'fflate';
 import type { Language } from '@/state/settings';
 import type { UnitPrefs } from '@/units/units';
+import { formatTrafficLog, trafficLog } from '@/obd/services/realBackend';
 import { fileStem, type Dataset } from './dataset';
 import { toAiReadme, toJson, toLongCsv, toSummaryMarkdown, toTimelineCsv } from './formats';
 
@@ -17,6 +18,8 @@ export function buildAiPack(d: Dataset, lang: Language): ExportFile {
     'summary.md': strToU8(toSummaryMarkdown(d, lang)),
     'session.json': strToU8(JSON.stringify(toJson(d, lang), null, 1)),
   };
+  // The adapter conversation helps diagnose connection problems; it contains no personal data beyond the VIN.
+  if (trafficLog.length) files['adapter_log.txt'] = strToU8(formatTrafficLog(trafficLog));
   if (d.kind === 'recording') {
     files['samples_long.csv'] = strToU8(toLongCsv(d));
     files['timeline.csv'] = strToU8(toTimelineCsv(d));

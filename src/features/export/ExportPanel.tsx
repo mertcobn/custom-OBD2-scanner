@@ -5,6 +5,7 @@ import type { Dataset } from '@/export/dataset';
 import { buildExport, canShareFiles, download, share, type ExportKind } from '@/export';
 import { cx } from '@/lib/cx';
 import { useSettings } from '@/state/settings';
+import { track } from '@/lib/telemetry';
 
 const ITEMS: { key: ExportKind; icon: LucideIcon }[] = [
   { key: 'pdf', icon: FileText },
@@ -30,6 +31,7 @@ export function ExportPanel({ getDataset, kinds = ['pdf', 'ai', 'csv'] }: { getD
       if (via === 'share') await share(file);
       else download(file);
       setDone(kind);
+      track('export', { kind, via });
       setTimeout(() => setDone((d) => (d === kind ? undefined : d)), 2500);
     } catch (e) {
       console.error(e);

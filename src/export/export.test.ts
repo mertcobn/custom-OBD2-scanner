@@ -148,7 +148,7 @@ describe('formats', () => {
     expect(pack.filename).toMatch(/-ai\.zip$/);
     return pack.blob.arrayBuffer().then((buf) => {
       const files = unzipSync(new Uint8Array(buf));
-      expect(Object.keys(files).sort()).toEqual(['README.md', 'samples_long.csv', 'session.json', 'summary.md', 'timeline.csv']);
+      expect(Object.keys(files).sort()).toEqual(expect.arrayContaining(['README.md', 'samples_long.csv', 'session.json', 'summary.md', 'timeline.csv']));
       expect(JSON.parse(strFromU8(files['session.json']!)).schema).toBe(SCHEMA);
     });
   });
@@ -156,6 +156,7 @@ describe('formats', () => {
   it('snapshot pack has no time series files', async () => {
     const pack = buildAiPack(buildSnapshotDataset(meta.snapshot), 'tr');
     const files = unzipSync(new Uint8Array(await pack.blob.arrayBuffer()));
-    expect(Object.keys(files).sort()).toEqual(['README.md', 'session.json', 'summary.md']);
+    expect(Object.keys(files)).not.toContain('timeline.csv');
+    expect(Object.keys(files)).toEqual(expect.arrayContaining(['README.md', 'session.json', 'summary.md']));
   });
 });

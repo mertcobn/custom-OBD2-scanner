@@ -21,6 +21,7 @@ import { SerialTransport } from '@/obd/transport/serial';
 import { SimTransport } from '@/obd/transport/sim';
 import { TransportError, type Transport } from '@/obd/transport/types';
 import type { Dtc, DtcKind, FreezeFrame, Sample } from '@/obd/types';
+import { track } from '@/lib/telemetry';
 import { sampleBus } from './bus';
 import { PollScheduler } from './scheduler';
 
@@ -53,6 +54,16 @@ class ConnectFailure extends Error {
 /** Raw traffic ring buffer — exported with recordings so problems can be diagnosed later. */
 export const trafficLog: ElmLogEntry[] = [];
 const TRAFFIC_MAX = 400;
+
+/** "HH:MM:SS.mmm  > 010C  < 7E8 04 41 0C 1A F8  (52 ms)" — one line per command. */
+export function formatTrafficLog(entries: ElmLogEntry[]): string {
+  return entries
+    .map((e) => {
+      const time = new Date(e.t).toISOString().slice(11, 23);
+      return `${time}  > ${e.tx || '(CR)'}  < ${e.rx.join(' | ') || '(empty)'}  (${Math.round(e.ms)} ms)`;
+    })
+    .join('\n');
+}
 
 /**
  * Real connection: transport → ELM327 driver → OBD protocol, feeding the stores and sample bus.
@@ -110,13 +121,17 @@ export class RealBackend implements ObdBackend {
       const voltage = parseVoltage(await this.elm.at('ATRV'));
       useVehicle.getState().setInfo({ ...useVehicle.getState().info, protocol, ecus });
       c.connected({ transport: this.transport.kind, name: this.transport.deviceName, elmVersion: version, voltage }, protocol);
+      track('connect_success', { transport: this.transport.kind, chip: version, protocol: this.dpn });
       void this.afterConnect();
       void this.pollLoop();
     } catch (e) {
       const failure = this.toFailure(e);
       // Closing the browser's device picker is not an error worth showing.
       if (failure.code === 'cancelled') useConnection.getState().reset();
-      else useConnection.getState().fail(failure.code, failure.message === failure.code ? undefined : failure.message);
+      else {
+        useConnection.getState().fail(failure.code, failure.message === failure.code ? undefined : failure.message);
+        track('connect_fail', { transport: this.transport.kind, reason: failure.code });
+      }
       await this.shutdown();
       throw failure;
     }

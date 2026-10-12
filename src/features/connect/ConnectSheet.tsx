@@ -131,10 +131,10 @@ function StepRow({ step }: { step: ConnectStep }) {
       <span
         className={cx(
           'grid size-7 shrink-0 place-items-center rounded-full border text-xs',
-          step.state === 'done' && 'border-matcha bg-matcha text-white',
+          step.state === 'done' && 'border-matcha bg-matcha text-on-accent',
           step.state === 'active' && 'animate-breathe border-sakura-deep text-sakura-deep',
           step.state === 'pending' && 'border-line text-ink-faint',
-          step.state === 'failed' && 'border-beni bg-beni text-white',
+          step.state === 'failed' && 'border-beni bg-beni text-on-accent',
         )}
       >
         {step.state === 'done' ? <Check size={14} /> : step.state === 'failed' ? <X size={14} /> : <span className="size-1.5 rounded-full bg-current" />}

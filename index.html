@@ -6,15 +6,9 @@
     <meta name="theme-color" content="#f6f1e7" />
     <meta name="description" content="Shindan — tarayıcıdan Bluetooth ile OBD2 araç teşhisi. Canlı veri, arıza kodları, kayıt ve dışa aktarım." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Shindan · 診断 OBD2</title>
-    <script>
-      // Avoid a light flash for dark-theme users before React mounts.
-      try {
-        var p = JSON.parse(localStorage.getItem('shindan.settings') || '{}').state?.theme || 'system';
-        var d = p === 'dark' || (p === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.dataset.theme = d ? 'dark' : 'light';
-      } catch (e) {}
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

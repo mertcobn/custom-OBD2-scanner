@@ -11,6 +11,7 @@ import { useVehicle } from '@/state/vehicle';
 import { captureSnapshot } from '@/state/recording';
 import { buildSnapshotDataset } from '@/export/dataset';
 import { ExportPanel } from '@/features/export/ExportPanel';
+import { TrafficLogButton } from './TrafficLogSheet';
 import { formatNumber } from '@/units/units';
 import { Button } from '@/ui/Button';
 import { Card, Row, SectionTitle } from '@/ui/controls';
@@ -152,7 +153,9 @@ function AdapterCard() {
   const lang = useSettings((s) => s.language);
   return (
     <Card className="p-5">
-      <SectionTitle kanji="通信">{t('vehicle.adapter.title')}</SectionTitle>
+      <SectionTitle kanji="通信" action={<TrafficLogButton />}>
+        {t('vehicle.adapter.title')}
+      </SectionTitle>
       <dl>
         <Row label={t('vehicle.adapter.name')}>{adapter?.name ?? '—'}</Row>
         <Row label={t('vehicle.adapter.transport')}>{adapter ? t(`transport.${adapter.transport}`) : '—'}</Row>
