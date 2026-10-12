@@ -410,3 +410,15 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
   - Testler: birim (birimler, zamanlayıcı, araç modeli, DTC, istatistik, uyumluluk) + Playwright E2E (mobil + masaüstü).
   - Not: Japonca fontlar yalnızca Latin alt kümesiyle yüklenir; süs amaçlı kanjiler sistemin Japonca fontundan gelir
     (CSS 729 KB → 74 KB).
+- **Faz 2** ✅ Taşıma + sürücü + bağlantı yöneticisi:
+  - `BleTransport`: 5 GATT profili (FFF0, FFE0, 18F0, OBDLink, Nordic UART) + bilinmeyen adaptörler için genel
+    notify/write keşfi, ad önekiyle filtreleme, "tüm cihazları göster" seçeneği, 20 baytlık parçalı yazma, GATT tekrar denemesi.
+  - `SerialTransport`: Web Serial; Classic Bluetooth SPP (RFCOMM) ve USB/COM port.
+  - `Elm327`: komut kuyruğu, parçalı çıktıyı '>' istemine kadar birleştirme, echo/SEARCHING temizleme,
+    durum kelimelerini tipli hatalara çevirme, zaman aşımı sonrası geç yanıtı atma.
+  - Çerçeve ayrıştırıcı: CAN 11/29 bit + ISO-TP çok çerçeve birleştirme, eski protokoller (J1850/ISO9141/KWP).
+  - `RealBackend`: ATZ → ATE0/L0/S1/H1/AT1/SP0 → protokol arama → desteklenen PID keşfi (ECU başına) →
+    öncelikli yoklama döngüsü, ölçülen hız, ardışık hata takibi, ham trafik kaydı.
+  - `SimTransport` + `Elm327Emulator`: gerçek adaptör gibi metin üreten sanal ELM327 (echo, başlıklar, çok çerçeve,
+    BLE parçalanması, gecikme). Tüm katmanlar bununla uçtan uca test edilir.
+

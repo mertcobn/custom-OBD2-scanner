@@ -80,6 +80,11 @@ function Choose() {
         <Button variant="primary" size="lg" block icon={<Bluetooth size={20} />} disabled={noBle} onClick={() => startConnect('ble')}>
           {t('connect.ble')}
         </Button>
+        {!noBle && (
+          <button onClick={() => startConnect('bleAll')} className="mx-auto -mt-1 py-1 text-sm text-ink-muted underline underline-offset-4 hover:text-ink">
+            {t('connect.bleAll')}
+          </button>
+        )}
         {compat.serial && (
           <Button variant="secondary" size="lg" block icon={<Usb size={20} />} onClick={() => startConnect('serial')}>
             {t('connect.serial')}

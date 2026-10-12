@@ -3,8 +3,9 @@ import { useConnection } from '@/state/connection';
 import { useLive } from '@/state/live';
 import { useRecording } from '@/state/recording';
 import { useVehicle } from '@/state/vehicle';
-import type { TransportKind } from './types';
 import { sampleBus } from './services/bus';
+// Imported eagerly: the browser device picker must open within the click's user-activation window.
+import { RealBackend, type RealTarget } from './services/realBackend';
 
 /**
  * A backend owns one connection to a vehicle (real or simulated) and pushes
@@ -18,7 +19,7 @@ export interface ObdBackend {
   clearDtcs(): Promise<void>;
 }
 
-export type ConnectTarget = TransportKind | 'demo';
+export type ConnectTarget = RealTarget | 'demo';
 
 let backend: ObdBackend | undefined;
 const interests = new Map<number, string[]>();
@@ -58,7 +59,6 @@ async function createBackend(target: ConnectTarget): Promise<ObdBackend> {
     const { DemoBackend } = await import('./demo/demoBackend');
     return new DemoBackend();
   }
-  const { RealBackend } = await import('./services/realBackend');
   return new RealBackend(target);
 }
 

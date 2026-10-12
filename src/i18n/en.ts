@@ -40,6 +40,7 @@ export const en = {
     },
     ble: 'Connect via Bluetooth',
     serial: 'Classic Bluetooth / USB (serial)',
+    bleAll: 'My adapter is not in the list — show all devices',
     demo: 'Try demo mode — no car needed',
     waitHint: 'Talking to the adapter. This usually takes a few seconds.',
     steps: { device: 'Adapter found', adapter: 'Adapter initialised', protocol: 'Vehicle protocol detected', vehicle: 'Vehicle responded' },
