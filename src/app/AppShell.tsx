@@ -47,9 +47,10 @@ function NavBadge({ item }: { item: NavItem }) {
 
 function Brand({ compact }: { compact?: boolean }) {
   return (
-    <NavLink to="/" className="flex items-center gap-2.5" aria-label="Shindan">
+    <NavLink to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Shindan">
       <Hanko char="診" size={compact ? 28 : 34} />
-      <span className="font-serif text-xl font-semibold tracking-tight">
+      {/* On very narrow phones (< 360 px) the seal alone is the logo, so the status pill keeps its room. */}
+      <span className={cx('font-serif text-xl font-semibold tracking-tight', compact && 'hidden min-[360px]:inline')}>
         Shindan
         {!compact && <span className="ml-2 text-xs font-normal tracking-[0.3em] text-ink-faint">診断</span>}
       </span>
@@ -105,7 +106,7 @@ function TopBar() {
     <header className="safe-top sticky top-0 z-30 border-b border-line/70 bg-bg/85 backdrop-blur-md lg:hidden">
       <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4">
         <Brand compact />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex min-w-0 items-center gap-1">
           <ConnectionPill variant="pill" />
           <NavLink
             to="/settings"

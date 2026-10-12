@@ -11,6 +11,9 @@ export default defineConfig({
   projects: [
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1366, height: 860 } } },
+    // iPhone screen geometry (rendered with Chromium; only the layout is checked here).
+    { name: 'iphone11', testMatch: /layout\.spec/, use: { ...devices['iPhone 11'], browserName: 'chromium', defaultBrowserType: 'chromium' } },
+    { name: 'small', testMatch: /layout\.spec/, use: { ...devices['iPhone SE'], browserName: 'chromium', defaultBrowserType: 'chromium' } },
   ],
   webServer: { command: 'npm run preview -- --port 4173', port: 4173, reuseExistingServer: true },
 });
