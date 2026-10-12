@@ -173,7 +173,11 @@ export function AppShell() {
   const celebrate = useUi((s) => s.celebrate);
   const { pathname } = useLocation();
   useCelebrateOnConnect();
-  useEffect(() => window.scrollTo({ top: 0 }), [pathname]);
+  // Block body on purpose: newer Chrome returns a Promise from scrollTo, and React would call
+  // whatever an effect returns as its cleanup ("l is not a function").
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [pathname]);
 
   return (
     <div className="flex min-h-dvh">
