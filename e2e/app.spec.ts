@@ -178,3 +178,27 @@ test('on-board tests (Mode 06) show pass/fail', async ({ page }) => {
   await page.getByRole('heading', { name: 'Araç içi testler' }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: `test-results/screens/${test.info().project.name}-15-mode06.png`, fullPage: true });
 });
+
+test('custom recording: select all / per category', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demoyu dene' }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });
+  await page.getByRole('link', { name: 'Kayıt' }).first().click();
+  await page.getByRole('button', { name: 'Sinyalleri seç' }).click();
+  const sheet = page.locator('dialog[open]');
+  const total = await sheet.getByRole('checkbox').count();
+  await sheet.getByRole('button', { name: /^Tümünü seç/ }).click();
+  await expect(sheet.getByRole('checkbox', { checked: true })).toHaveCount(total);
+  await expect(sheet.getByRole('button', { name: `Tamam · ${total} sinyal` })).toBeVisible();
+  // Drop one whole category
+  const engine = sheet.getByRole('group', { name: /^Motor/ });
+  const engineCount = await engine.getByRole('checkbox').count();
+  await sheet.getByRole('button', { name: 'Hiçbiri: Motor' }).click();
+  await expect(sheet.getByRole('checkbox', { checked: true })).toHaveCount(total - engineCount);
+  await sheet.getByRole('button', { name: 'Tümü: Motor' }).click();
+  await expect(sheet.getByRole('checkbox', { checked: true })).toHaveCount(total);
+  await sheet.getByRole('button', { name: 'Tümünü kaldır' }).click();
+  await expect(sheet.getByRole('checkbox', { checked: true })).toHaveCount(0);
+  await sheet.getByRole('button', { name: /^Tümünü seç/ }).click();
+  await page.screenshot({ path: `test-results/screens/${test.info().project.name}-16-picker.png` });
+});
