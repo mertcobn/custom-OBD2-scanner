@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { Analytics as VercelAnalytics, type BeforeSendEvent } from '@vercel/analytics/react';
 import { useSettings } from '@/state/settings';
+import { reportError } from '@/lib/errorReporting';
 
 /** Only on the Vercel production deployment (where /_vercel/insights exists), or when forced via VITE_ANALYTICS=1. */
 const available = () => import.meta.env.VITE_VERCEL_ENV === 'production' || import.meta.env.VITE_ANALYTICS === '1';
@@ -18,6 +19,7 @@ export class Isolated extends Component<{ children: ReactNode; name: string }, {
   }
   componentDidCatch(error: unknown) {
     console.warn(`[shindan] ${this.props.name} disabled after an error:`, error);
+    reportError(error, this.props.name);
   }
   render() {
     return this.state.failed ? null : this.props.children;

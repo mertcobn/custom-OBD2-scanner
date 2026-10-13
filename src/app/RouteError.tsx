@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { reportError } from '@/lib/errorReporting';
 import { isRouteErrorResponse, useRouteError } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
@@ -7,6 +8,9 @@ export function RouteError() {
   const error = useRouteError();
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    reportError(error, 'route');
+  }, [error]);
   const message = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : error instanceof Error ? error.message : String(error);
   // A new version was deployed while this tab was open: the old code chunk no longer exists. A reload fixes it.
   const staleChunk = /dynamically imported module|Importing a module script failed|Loading chunk/i.test(message);

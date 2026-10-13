@@ -18,6 +18,7 @@
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource/biz-udpmincho": "^5.3.0",
     "@fontsource/m-plus-1p": "^5.3.0",
+    "@sentry/react": "^11.7.0",
     "@vercel/analytics": "^2.0.1",
     "fflate": "^0.8.3",
     "i18next": "^26.4.4",

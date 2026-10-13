@@ -395,6 +395,8 @@ export const tr: Messages = {
     privacyBody: 'Shindan’da hesap ya da sunucu yok. Şasi numarası dahil araç verileri bu cihazda kalır.',
     analytics: 'Anonim kullanım istatistikleri',
     analyticsHint: 'Çerezsiz sayfa görüntülemeleri ve bağlantı başarı oranları. Asla araç verisi değil.',
+    errorReports: 'Hata raporlarını gönder',
+    errorReportsHint: 'Varsayılan olarak kapalı. Bir şey bozulduğunda düzeltilebilmesi için teknik bir rapor (hata ve yığın izi) gönderilir. Şasi numarası ve araç verileri önceden silinir.',
     clearData: 'Bu cihazdaki verileri temizle',
     clearDataHint: 'Ayarları ve kayıtlı sürüşleri siler.',
     clearDataCta: 'Temizle',

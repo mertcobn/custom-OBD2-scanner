@@ -16,6 +16,8 @@ interface SettingsState {
   dashboard: string[];
   pinned: string[];
   analytics: boolean;
+  /** Opt-in crash reports (only offered when the deployment configures Sentry). */
+  errorReports: boolean;
   onboarded: boolean;
   setLanguage: (l: Language) => void;
   setTheme: (t: ThemePref) => void;
@@ -24,6 +26,7 @@ interface SettingsState {
   setDashboard: (ids: string[]) => void;
   togglePinned: (id: string) => void;
   setAnalytics: (on: boolean) => void;
+  setErrorReports: (on: boolean) => void;
   setOnboarded: (v: boolean) => void;
 }
 
@@ -42,6 +45,7 @@ export const useSettings = create<SettingsState>()(
       dashboard: DEFAULT_DASHBOARD,
       pinned: ['rpm', 'speed', 'coolantTemp'],
       analytics: true,
+      errorReports: false,
       onboarded: false,
       setLanguage: (language) => set({ language }),
       setTheme: (theme) => set({ theme }),
@@ -55,6 +59,7 @@ export const useSettings = create<SettingsState>()(
       togglePinned: (id) =>
         set((s) => ({ pinned: s.pinned.includes(id) ? s.pinned.filter((p) => p !== id) : [...s.pinned, id] })),
       setAnalytics: (analytics) => set({ analytics }),
+      setErrorReports: (errorReports) => set({ errorReports }),
       setOnboarded: (onboarded) => set({ onboarded }),
     }),
     { name: 'shindan.settings', version: 1 },

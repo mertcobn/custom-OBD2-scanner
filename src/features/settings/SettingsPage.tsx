@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Code, X } from 'lucide-react';
 import { detectCompat } from '@/lib/compat';
+import { errorReportingAvailable } from '@/lib/errorReporting';
 import { useRecording } from '@/state/recording';
 import { useSettings, type Language, type ThemePref, type UnitSystem } from '@/state/settings';
 import type { UnitPrefs } from '@/units/units';
@@ -111,6 +112,11 @@ export function SettingsPage() {
         <SettingRow label={t('settings.analytics')} hint={t('settings.analyticsHint')}>
           <Switch checked={s.analytics} onChange={s.setAnalytics} label={t('settings.analytics')} />
         </SettingRow>
+        {errorReportingAvailable && (
+          <SettingRow label={t('settings.errorReports')} hint={t('settings.errorReportsHint')}>
+            <Switch checked={s.errorReports} onChange={s.setErrorReports} label={t('settings.errorReports')} />
+          </SettingRow>
+        )}
         <SettingRow label={t('settings.clearData')} hint={t('settings.clearDataHint')}>
           <Button size="sm" variant="secondary" className="text-beni" onClick={clearLocal} disabled={cleared}>
             {cleared ? t('settings.cleared') : t('settings.clearDataCta')}

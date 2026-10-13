@@ -393,6 +393,8 @@ export const en = {
     privacyBody: 'Shindan has no accounts and no servers. Vehicle data, including your VIN, stays on this device.',
     analytics: 'Anonymous usage statistics',
     analyticsHint: 'Cookie-free page views and connection success rates. Never vehicle data.',
+    errorReports: 'Send crash reports',
+    errorReportsHint: 'Off by default. When something breaks, a technical report (error and stack trace) is sent so it can be fixed. VIN and vehicle readings are removed first.',
     clearData: 'Clear data on this device',
     clearDataHint: 'Removes settings and saved recordings.',
     clearDataCta: 'Clear',
