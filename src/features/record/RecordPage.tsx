@@ -160,6 +160,13 @@ function SignalPicker({ open, onClose }: { open: boolean; onClose: () => void })
     const signals = config.signals.includes(id) ? config.signals.filter((x) => x !== id) : [...config.signals, id];
     setConfig({ preset: 'custom', signals });
   };
+  /** Select or clear a group of signals at once (keeps the catalogue order). */
+  const setMany = (ids: string[], on: boolean) => {
+    const next = new Set(config.signals);
+    ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
+    setConfig({ preset: 'custom', signals: pool.filter((id) => next.has(id)) });
+  };
+  const allSelected = pool.length > 0 && pool.every((id) => config.signals.includes(id));
 
   return (
     <Sheet
@@ -174,13 +181,31 @@ function SignalPicker({ open, onClose }: { open: boolean; onClose: () => void })
         </Button>
       }
     >
-      <p className="mb-4 text-sm text-ink-muted">{t('record.pickHint')}</p>
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <p className="min-w-0 flex-1 text-sm text-ink-muted">{t('record.pickHint')}</p>
+        <Button size="sm" variant="secondary" onClick={() => setMany(pool, !allSelected)}>
+          {allSelected ? t('record.clearAll') : t('record.selectAll', { count: pool.length })}
+        </Button>
+      </div>
       {CATEGORIES.map((cat) => {
         const ids = pool.filter((id) => SIGNAL_BY_ID[id]?.category === cat);
         if (!ids.length) return null;
+        const catAll = ids.every((id) => config.signals.includes(id));
         return (
-          <fieldset key={cat} className="mb-5">
-            <legend className="mb-2 text-sm font-medium text-ink-muted">{t(`categories.${cat}`)}</legend>
+          <section key={cat} className="mb-5" role="group" aria-labelledby={`pick-${cat}`}>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h3 id={`pick-${cat}`} className="text-sm font-medium text-ink-muted">
+                {t(`categories.${cat}`)} <span className="num text-xs text-ink-faint">{ids.filter((id) => config.signals.includes(id)).length}/{ids.length}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setMany(ids, !catAll)}
+                className="min-h-9 rounded-xl px-2 text-sm font-medium text-sakura-deep hover:bg-surface-2"
+                aria-label={`${catAll ? t('record.clearGroup') : t('record.selectGroup')}: ${t(`categories.${cat}`)}`}
+              >
+                {catAll ? t('record.clearGroup') : t('record.selectGroup')}
+              </button>
+            </div>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {ids.map((id) => {
                 const checked = config.signals.includes(id);
@@ -195,7 +220,7 @@ function SignalPicker({ open, onClose }: { open: boolean; onClose: () => void })
                 );
               })}
             </div>
-          </fieldset>
+          </section>
         );
       })}
     </Sheet>
