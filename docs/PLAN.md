@@ -474,4 +474,11 @@ Her faz sonunda: `lint` + `typecheck` + `test` + `build` + E2E temiz → `main`'
   React onu çağırıp çöküyordu. Yığın izi production sourcemap ile React'in `destroy_` çağrısına kadar izlendi.
   Düzeltme: efekt gövdeleri blok; ESLint kuralı ifade gövdeli efektleri yasaklıyor; E2E testi Promise döndüren
   kaydırma metodlarını taklit ederek tüm sayfalar arasında gezinir.
+- **Ek özellikler (Faz 7 öncesi):**
+  - **Mode 06 araç içi testler:** CAN biçimi çözücü, SAE J1979 birim/ölçek tablosu (UASID, işaretli değerler dahil),
+    monitör/test adları (TR/EN), sınırlara göre geçti/kaldı; Arıza sayfasında kart; PDF/JSON/Markdown ve bulgulara eklendi.
+    Eski protokollerde "desteklenmiyor" gösterilir. Demo araçta 1. silindir tekleme sayacı limit üstünde (P0301 ile tutarlı).
+  - **İsteğe bağlı hata raporları (Sentry v11):** varsayılan kapalı, yalnızca `VITE_SENTRY_DSN` tanımlıysa sunulur;
+    SDK sadece açınca tembel yüklenir (önbelleğe alınmaz); VIN/sorgu/kullanıcı/başlık/konsol temizliği; hata sayfası ve
+    yalıtılmış bileşen hataları raporlanır. CSP `connect-src`'a `*.sentry.io` eklendi.
 

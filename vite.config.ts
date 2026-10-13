@@ -36,6 +36,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,ttf}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/_vercel/],
+        // Opt-in crash reporting is only downloaded by people who turn it on.
+        globIgnores: ['**/sentry-*.js'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         cleanupOutdatedCaches: true,
       },
@@ -43,7 +45,16 @@ export default defineConfig({
   ],
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   // Open-source app: ship source maps so production stack traces point at real code.
-  build: { sourcemap: true },
+  build: {
+    sourcemap: true,
+    rolldownOptions: {
+      output: {
+        // Name the opt-in Sentry chunk so the service worker can skip precaching it.
+        chunkFileNames: (chunk) =>
+          chunk.moduleIds.some((id) => id.includes('/@sentry/')) ? 'assets/sentry-[hash].js' : 'assets/[name]-[hash].js',
+      },
+    },
+  },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

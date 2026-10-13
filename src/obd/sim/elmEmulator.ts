@@ -181,6 +181,8 @@ export class Elm327Emulator {
         return this.frame('7E8', [0x44]);
       case 0x09:
         return this.mode09(args[0] ?? 0);
+      case 0x06:
+        return this.mode06(args[0] ?? 0);
       default:
         return [];
     }
@@ -221,6 +223,20 @@ export class Elm327Emulator {
       }
     });
     return [(mil ? 0x80 : 0) | (stored & 0x7f), b, c, d];
+  }
+
+  private mode06(mid: number): string[] {
+    const mids = Object.keys(this.scenario.mode06).map(Number).sort((a, b) => a - b);
+    if (mid % 0x20 === 0) {
+      const inRange = mids.filter((m) => m > mid && m <= mid + 0x20);
+      const more = mids.some((m) => m > mid + 0x20);
+      if (!inRange.length && !more) return [];
+      return this.frame('7E8', [0x46, mid, ...encodeSupportedMask(mid, more ? [...inRange, mid + 0x20] : inRange)]);
+    }
+    const tests = this.scenario.mode06[mid];
+    if (!tests || this.cleared) return [];
+    const w = (n: number) => [(n >> 8) & 0xff, n & 0xff];
+    return this.frame('7E8', [0x46, mid, ...tests.flatMap(([tid, uasid, v, lo, hi]) => [tid, uasid, ...w(v), ...w(lo), ...w(hi)])]);
   }
 
   private mode09(pid: number): string[] {

@@ -10,6 +10,8 @@ export interface SimScenario {
   dtcs: Dtc[];
   monitor: MonitorStatus;
   freezeFrame: { dtc: string; values: Record<number, number[]> };
+  /** Mode 06 results: MID → [TID, UASID, value, min, max] raw words. */
+  mode06: Record<number, [number, number, number, number, number][]>;
 }
 
 export const DEMO_SCENARIO: SimScenario = {
@@ -52,5 +54,25 @@ export const DEMO_SCENARIO: SimScenario = {
       0x0f: [0x43], // 27 °C
       0x0b: [0x21], // 33 kPa
     },
+  },
+  mode06: {
+    // O2 sensor B1S1: threshold 0.450 V, switch times 72 / 64 ms — healthy
+    0x01: [
+      [0x01, 0x0b, 450, 400, 500],
+      [0x05, 0x10, 72, 0, 100],
+      [0x06, 0x10, 64, 0, 100],
+    ],
+    // Catalyst B1: manufacturer index, within limits
+    0x21: [[0x80, 0x01, 118, 0, 255]],
+    // Misfire cylinder 1: counts above the limit — the cause of P0301
+    0xa2: [
+      [0x0b, 0x24, 46, 0, 30],
+      [0x0c, 0x24, 52, 0, 30],
+    ],
+    // Misfire cylinder 2: fine
+    0xa3: [
+      [0x0b, 0x24, 1, 0, 30],
+      [0x0c, 0x24, 0, 0, 30],
+    ],
   },
 };

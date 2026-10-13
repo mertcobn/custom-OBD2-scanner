@@ -15,6 +15,7 @@ import './styles/index.css';
 import './i18n';
 import { App } from './app/App';
 import { useRecording } from './state/recording';
+import { initErrorReporting } from './lib/errorReporting';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -24,3 +25,4 @@ createRoot(document.getElementById('root')!).render(
 
 // Load saved recordings and close any that were interrupted by a reload or crash.
 void useRecording.getState().init();
+initErrorReporting();

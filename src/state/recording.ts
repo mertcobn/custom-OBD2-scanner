@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AdapterInfo, Dtc, FreezeFrame, MonitorStatus, Sample, VehicleInfo } from '@/obd/types';
+import type { OnboardTest } from '@/obd/protocol/mode06';
 import { sampleBus } from '@/obd/services/bus';
 import { acquireWakeLock, releaseWakeLock } from '@/lib/wakeLock';
 import * as store from '@/storage/db';
@@ -37,6 +38,8 @@ export interface SessionSnapshot {
   adapter?: AdapterInfo;
   protocol?: string;
   supported: string[];
+  /** Mode 06 results, when they were read. */
+  onboardTests?: OnboardTest[];
   demo: boolean;
 }
 
@@ -104,6 +107,7 @@ export function captureSnapshot(): SessionSnapshot {
     adapter: c.adapter,
     protocol: c.protocol,
     supported: useLive.getState().supported,
+    onboardTests: v.testsState === 'ready' ? v.tests : undefined,
     demo: c.demo,
   };
 }
@@ -124,6 +128,7 @@ function refreshSnapshot(start: SessionSnapshot): SessionSnapshot {
     adapter: start.adapter ?? now.adapter,
     protocol: start.protocol ?? now.protocol,
     supported: start.supported.length ? start.supported : now.supported,
+    onboardTests: now.onboardTests ?? start.onboardTests,
   };
 }
 

@@ -10,6 +10,7 @@ import serifUrl from '@/assets/fonts/NotoSerif_600SemiBold.ttf?url';
 import monoUrl from '@/assets/fonts/JetBrainsMono_400Regular.ttf?url';
 import type { Dataset, SignalSeries } from './dataset';
 import { findingTexts } from './formats';
+import { monitorName, testName } from '@/obd/protocol/mode06';
 
 type RGB = [number, number, number];
 const C = {
@@ -289,6 +290,29 @@ export async function buildPdf(d: Dataset, { lang, units }: PdfOptions): Promise
       doc.text(`${display(def, val)} ${unitOf(def)}`, x, y + 5);
     });
     y += 13;
+  }
+
+  // On-board tests (Mode 06)
+  if (snap.onboardTests?.length) {
+    section(`${t('dtc.tests.title')} · Mode 06`);
+    for (const x of snap.onboardTests) {
+      const name = `${monitorName(x.mid)[lang]} — ${testName(x.mid, x.tid)[lang]}`;
+      font('Sans', 'normal', 9);
+      const lines = doc.splitTextToSize(name, CONTENT_W - 62) as string[];
+      ensure(lines.length * 4 + 2);
+      color(C.ink);
+      doc.text(lines, M, y);
+      font('Mono', 'normal', 8.5);
+      color(x.pass ? C.ink : C.beni);
+      doc.text(`${formatNumber(x.value, 3, locale).replace(/[.,]?0+$/, '')} ${x.unit}`, M + CONTENT_W - 36, y, { align: 'right' });
+      color(C.muted);
+      font('Mono', 'normal', 7.5);
+      doc.text(`${x.min} … ${x.max}`, M + CONTENT_W - 34, y);
+      font('Sans', 'bold', 8.5);
+      color(x.pass ? C.matcha : C.beni);
+      doc.text(x.pass ? t('dtc.tests.pass') : t('dtc.tests.fail'), PAGE_W - M, y, { align: 'right' });
+      y += lines.length * 4 + 2;
+    }
   }
 
   // Readiness

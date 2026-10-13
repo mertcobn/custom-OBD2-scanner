@@ -94,6 +94,25 @@ describe('RealBackend over the simulated adapter', () => {
     }
   }, 30_000);
 
+  it('reads Mode 06 on-board test results with pass/fail', async () => {
+    const { useVehicle } = await import('@/state/vehicle');
+    backend = new RealBackend('sim', new SimTransport({ latencyMs: 0 }));
+    await backend.connect();
+    await backend.readTests();
+    const v = useVehicle.getState();
+    expect(v.testsState).toBe('ready');
+    expect(new Set(v.tests.map((t) => t.mid))).toEqual(new Set([0x01, 0x21, 0xa2, 0xa3]));
+    const o2 = v.tests.find((t) => t.mid === 0x01 && t.tid === 0x01)!;
+    expect(o2).toMatchObject({ value: 0.45, min: 0.4, max: 0.5, unit: 'V', pass: true });
+    const misfire = v.tests.filter((t) => t.mid === 0xa2);
+    expect(misfire.every((t) => !t.pass)).toBe(true);
+    expect(v.tests.filter((t) => !t.pass)).toHaveLength(2);
+
+    await backend.clearDtcs();
+    expect(useVehicle.getState().tests).toEqual([]);
+    useVehicle.getState().reset();
+  });
+
   it('does not poll unsupported signals', async () => {
     backend = new RealBackend('sim', new SimTransport({ latencyMs: 0 }));
     await backend.connect();

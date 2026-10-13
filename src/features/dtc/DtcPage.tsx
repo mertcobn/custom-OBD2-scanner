@@ -18,6 +18,7 @@ import { EnsoLoader } from '@/ui/EnsoLoader';
 import { Hanko } from '@/ui/Hanko';
 import { EmptyState, PageHeader } from '@/ui/layout';
 import { Sheet } from '@/ui/Sheet';
+import { OnboardTests } from './OnboardTests';
 
 const KINDS: DtcKind[] = ['stored', 'pending', 'permanent'];
 
@@ -64,6 +65,7 @@ export function DtcPage() {
         <CodeLists />
       )}
       <FreezeFrameCard />
+      <OnboardTests />
       <ClearZone />
     </div>
   );

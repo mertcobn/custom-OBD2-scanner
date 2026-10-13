@@ -1,4 +1,5 @@
 import { valueAt, type Dataset, type SignalSeries } from './dataset';
+import { monitorName } from '@/obd/protocol/mode06';
 
 export type FindingLevel = 'high' | 'medium' | 'info';
 
@@ -64,6 +65,12 @@ export function findings(d: Dataset): Finding[] {
 
   const incomplete = snap.monitor?.monitors.filter((m) => m.supported && !m.complete) ?? [];
   if (incomplete.length) out.push({ level: 'info', key: 'monitorsIncomplete', params: { count: incomplete.length } });
+
+  const failedTests = snap.onboardTests?.filter((x) => !x.pass) ?? [];
+  if (failedTests.length) {
+    const monitors = [...new Set(failedTests.map((x) => monitorName(x.mid).en))].join(', ');
+    out.push({ level: 'medium', key: 'testsFailed', params: { count: failedTests.length, monitors } });
+  }
 
   const drops = d.meta?.events.filter((e) => e.type === 'paused').length ?? 0;
   if (drops) out.push({ level: 'info', key: 'linkDrops', params: { count: drops } });
