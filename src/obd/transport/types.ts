@@ -10,6 +10,8 @@ export interface Transport {
   write(text: string): Promise<void>;
   onData(cb: (chunk: string) => void): () => void;
   onClose(cb: (error?: Error) => void): () => void;
+  /** Called once the user has chosen a device in the browser's picker (before the link is opened). */
+  onPicked?: () => void;
   /** Re-open the same device after an unexpected drop, without the picker. Optional. */
   reconnect?(): Promise<void>;
 }

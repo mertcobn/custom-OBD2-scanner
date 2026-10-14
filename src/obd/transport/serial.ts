@@ -65,6 +65,7 @@ export class SerialTransport implements Transport {
   private data = new Listeners<[string]>();
   private close = new Listeners<[Error | undefined]>();
   private manualClose = false;
+  onPicked?: () => void;
   private readonly onPageHide = () => void this.closePort();
 
   constructor(private readonly opts: SerialOptions = {}) {}
@@ -104,6 +105,7 @@ export class SerialTransport implements Transport {
         if (e instanceof DOMException && e.name === 'NotFoundError') throw new TransportError('cancelled', e.message);
         throw new TransportError('unknown', e instanceof Error ? e.message : String(e));
       }
+      this.onPicked?.();
     }
     const info = this.port.getInfo() as PortInfo;
     this.deviceName = describePort(info);
