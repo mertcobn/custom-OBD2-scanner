@@ -14,7 +14,7 @@ export interface Transport {
   reconnect?(): Promise<void>;
 }
 
-export type TransportErrorCode = 'cancelled' | 'unsupported' | 'noCompatibleService' | 'lost' | 'unknown';
+export type TransportErrorCode = 'cancelled' | 'unsupported' | 'noCompatibleService' | 'portBusy' | 'lost' | 'unknown';
 
 export class TransportError extends Error {
   constructor(

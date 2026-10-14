@@ -11,6 +11,7 @@ export type ConnectErrorCode =
   | 'cancelled'
   | 'unsupported'
   | 'noCompatibleService'
+  | 'portBusy'
   | 'adapterSilent'
   | 'noVehicle'
   | 'lost'
@@ -30,12 +31,13 @@ interface ConnectionState {
   adapter?: AdapterInfo;
   protocol?: string;
   steps: ConnectStep[];
-  error?: { code: ConnectErrorCode; message?: string };
+  /** `report`: the connection test report (steps, port, raw adapter traffic) for troubleshooting. */
+  error?: { code: ConnectErrorCode; message?: string; report?: string };
   connectedAt?: number;
   begin: (transport: TransportKind, demo: boolean) => void;
   step: (id: ConnectStepId, state: StepState, detail?: string) => void;
   connected: (adapter: AdapterInfo, protocol?: string) => void;
-  fail: (code: ConnectErrorCode, message?: string) => void;
+  fail: (code: ConnectErrorCode, message?: string, report?: string) => void;
   setStatus: (status: ConnectionStatus) => void;
   setVoltage: (v: number) => void;
   reset: () => void;
@@ -53,10 +55,10 @@ export const useConnection = create<ConnectionState>()((set) => ({
   step: (id, state, detail) =>
     set((s) => ({ steps: s.steps.map((st) => (st.id === id ? { ...st, state, detail: detail ?? st.detail } : st)) })),
   connected: (adapter, protocol) => set({ status: 'connected', adapter, protocol, connectedAt: Date.now() }),
-  fail: (code, message) =>
+  fail: (code, message, report) =>
     set((s) => ({
       status: 'error',
-      error: { code, message },
+      error: { code, message, report },
       steps: s.steps.map((st) => (st.state === 'active' ? { ...st, state: 'failed' } : st)),
     })),
   setStatus: (status) => set({ status }),

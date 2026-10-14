@@ -28,7 +28,7 @@ import { PollScheduler } from './scheduler';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export type RealTarget = 'ble' | 'bleAll' | 'serial' | 'sim';
+export type RealTarget = 'ble' | 'bleAll' | 'serial' | 'serialKnown' | 'sim';
 
 function makeTransport(target: RealTarget): Transport {
   switch (target) {
@@ -38,6 +38,8 @@ function makeTransport(target: RealTarget): Transport {
       return new BleTransport({ acceptAll: true });
     case 'serial':
       return new SerialTransport();
+    case 'serialKnown':
+      return new SerialTransport({ previous: true });
     case 'sim':
       return new SimTransport();
   }
@@ -100,6 +102,7 @@ export class RealBackend implements ObdBackend {
   async connect(): Promise<void> {
     const c = useConnection.getState();
     c.begin(this.transport.kind, this.transport.kind === 'sim');
+    trafficLog.length = 0; // the log (and the connection test report) describe this connection only
     try {
       c.step('device', 'active');
       await this.transport.connect();
@@ -130,12 +133,33 @@ export class RealBackend implements ObdBackend {
       // Closing the browser's device picker is not an error worth showing.
       if (failure.code === 'cancelled') useConnection.getState().reset();
       else {
-        useConnection.getState().fail(failure.code, failure.message === failure.code ? undefined : failure.message);
+        useConnection.getState().fail(failure.code, failure.message === failure.code ? undefined : failure.message, this.connectionReport(failure));
         track('connect_fail', { transport: this.transport.kind, reason: failure.code });
       }
       await this.shutdown();
       throw failure;
     }
+  }
+
+  /** Plain-text "connection test" report: what was tried, where it stopped, and the raw adapter conversation. */
+  private connectionReport(failure: ConnectFailure): string {
+    const c = useConnection.getState();
+    const t = this.transport as Transport & { attempts?: string[] };
+    const lines = [
+      `Shindan ${__APP_VERSION__} — connection test`,
+      `Time: ${new Date().toISOString()}`,
+      `Browser: ${typeof navigator !== 'undefined' ? navigator.userAgent : '-'}`,
+      `Connection: ${this.target} (${this.transport.kind})`,
+      `Device: ${this.transport.deviceName}`,
+      ...(t.attempts?.length ? ['Port:', ...t.attempts.map((a) => `  ${a}`)] : []),
+      'Steps:',
+      // The step still "active" when the error hit is the one that failed.
+      ...c.steps.map((s) => `  ${s.state === 'done' ? '✓' : s.state === 'failed' || s.state === 'active' ? '✗' : '·'} ${s.id}${s.detail ? ` — ${s.detail}` : ''}`),
+      `Result: ${failure.code}${failure.message && failure.message !== failure.code ? ` — ${failure.message}` : ''}`,
+      'Adapter traffic (> sent, < received):',
+      trafficLog.length ? formatTrafficLog(trafficLog.slice(-40)) : '  (nothing was exchanged with the adapter)',
+    ];
+    return lines.join('\n');
   }
 
   /** Vehicle identity, readiness and fault codes — read once right after connecting. */
@@ -209,10 +233,13 @@ export class RealBackend implements ObdBackend {
     // Some clones need a moment after the link comes up. A bare CR flushes any partial input;
     // it goes through the command queue so its "?" + prompt is consumed and can't be taken
     // as the answer to the next command (which would shift every response by one).
-    await sleep(this.transport.kind === 'sim' ? 0 : 200);
-    await this.elm.at('', 1000);
+    // Classic Bluetooth serial links (macOS cu.*, Windows COM) take a second or two to carry data
+    // after the port opens; commands sent earlier are silently lost.
+    const serial = this.transport.kind === 'serial';
+    await sleep(this.transport.kind === 'sim' ? 0 : serial ? 1500 : 200);
+    await this.elm.at('', serial ? 2000 : 1000);
     let reset: string[] | undefined;
-    for (let attempt = 0; attempt < 2 && !reset; attempt++) reset = await this.elm.at('ATZ', 3000);
+    for (let attempt = 0; attempt < (serial ? 3 : 2) && !reset; attempt++) reset = await this.elm.at('ATZ', serial ? 4000 : 3000);
     if (!reset) throw new ConnectFailure('adapterSilent');
     await this.elm.at('ATE0');
     await this.elm.at('ATL0');

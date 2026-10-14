@@ -1,6 +1,6 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bluetooth, Check, ChevronDown, KeyRound, Plug, Smartphone, Sparkles, Usb, X } from 'lucide-react';
+import { Bluetooth, Check, ChevronDown, Copy, History, KeyRound, Plug, Smartphone, Sparkles, Usb, X } from 'lucide-react';
 import { connect, disconnect, type ConnectTarget } from '@/obd/controller';
 import { BLUEFY_URL, detectCompat } from '@/lib/compat';
 import { cx } from '@/lib/cx';
@@ -14,6 +14,7 @@ import { Button } from '@/ui/Button';
 import { Badge, Row } from '@/ui/controls';
 import { EnsoLoader } from '@/ui/EnsoLoader';
 import { Sheet } from '@/ui/Sheet';
+import { SerialTransport } from '@/obd/transport/serial';
 
 export function ConnectSheet() {
   const { t } = useTranslation();
@@ -41,10 +42,21 @@ function Choose() {
   const compat = useMemo(() => detectCompat(), []);
   const error = useConnection((s) => s.error);
   const noBle = !compat.ble;
+  const mac = typeof navigator !== 'undefined' && /Macintosh/.test(navigator.userAgent) && !compat.ios;
+  // A serial port granted earlier survives reloads: offer it without the picker.
+  const [hasKnownPort, setHasKnownPort] = useState(false);
+  useEffect(() => {
+    if (!compat.serial) return;
+    let alive = true;
+    void SerialTransport.knownPorts().then((p) => alive && setHasKnownPort(p.length > 0));
+    return () => {
+      alive = false;
+    };
+  }, [compat.serial]);
 
   return (
     <div className="flex flex-col gap-5">
-      {error && <ErrorBox code={error.code} message={error.message} />}
+      {error && <ErrorBox code={error.code} message={error.message} report={error.report} />}
 
       {compat.ios && !compat.ble && (
         <Notice tone="kin" icon={<Smartphone size={18} />} title={t('compat.ios.title')}>
@@ -85,11 +97,17 @@ function Choose() {
             {t('connect.bleAll')}
           </button>
         )}
+        {compat.serial && hasKnownPort && (
+          <Button variant="secondary" size="lg" block icon={<History size={20} />} onClick={() => startConnect('serialKnown')}>
+            {t('connect.serialKnown')}
+          </Button>
+        )}
         {compat.serial && (
           <Button variant="secondary" size="lg" block icon={<Usb size={20} />} onClick={() => startConnect('serial')}>
             {t('connect.serial')}
           </Button>
         )}
+        {compat.serial && mac && <p className="rounded-2xl bg-ai-soft p-3 text-sm leading-relaxed text-ink">{t('connect.macHint')}</p>}
         <Button variant="ghost" size="md" block icon={<Sparkles size={18} />} onClick={() => startConnect('demo')}>
           {t('connect.demo')}
         </Button>
@@ -213,13 +231,39 @@ function Notice({ tone, icon, title, children }: { tone: 'kin' | 'beni'; icon: R
   );
 }
 
-function ErrorBox({ code, message }: { code: string; message?: string }) {
+function ErrorBox({ code, message, report }: { code: string; message?: string; report?: string }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   if (code === 'cancelled') return null;
   return (
     <Notice tone="beni" icon={<X size={18} />} title={t(`connect.errors.${code}.title`)}>
       <p>{t(`connect.errors.${code}.body`)}</p>
       {message && <p className="num mt-1 text-xs opacity-70">{message}</p>}
+      {report && (
+        <div className="mt-3">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" aria-expanded={open} onClick={() => setOpen(!open)}>
+              {t('connect.report.show')}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={copied ? <Check size={15} /> : <Copy size={15} />}
+              onClick={() => {
+                void navigator.clipboard?.writeText(report).then(() => setCopied(true));
+              }}
+            >
+              {copied ? t('common.copied') : t('connect.report.copy')}
+            </Button>
+          </div>
+          {open && (
+            <pre className="num mt-2 max-h-64 overflow-auto rounded-xl bg-surface p-3 text-[11px] leading-relaxed whitespace-pre-wrap text-ink" data-testid="connection-report">
+              {report}
+            </pre>
+          )}
+        </div>
+      )}
     </Notice>
   );
 }
