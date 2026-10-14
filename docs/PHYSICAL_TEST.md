@@ -22,6 +22,15 @@ Tüm günlüğü kopyala** ile ham trafiği kopyala ve paylaş; sorunların ço�
 - [ ] Bağlantı süresi: ____ sn (ilk bağlantıda protokol araması 5–10 sn sürebilir).
 - [ ] Üst çubukta voltaj görünüyor (kontak açık ≈ 12,2–12,8 V; motor çalışırken ≈ 13,5–14,7 V).
 
+### 2a. Mac + Klasik Bluetooth (HH OBD Advanced gibi)
+- [ ] Bir kez **Sistem Ayarları → Bluetooth**'ta adaptörle eşleş (PIN 1234 / 0000). Mac'te "bağlı" görünmesi gerekmez;
+      bağlantıyı Chrome açar.
+- [ ] **Klasik Bluetooth / USB** → listeden **`cu.OBDII`** (ya da `cu.` ile başlayan) girişi seç. "OBDII (eşleştirildi)"
+      girişi macOS'ta çoğu zaman açılmaz.
+- [ ] Sayfayı yenile → **Son kullanılan seri adaptöre bağlan** seçeneği listesiz bağlanıyor.
+- [ ] Bağlan → kes → bağlan üç kez arka arkaya çalışıyor.
+- [ ] Başarısız olursa hata kutusundaki **Bağlantı testi raporu → Raporu kopyala** çıktısını paylaş.
+
 ## 3. Göstergeler ve canlı veri
 - [ ] Motoru çalıştır: devir rölantide makul (≈ 650–950).
 - [ ] Gaza basınca devir ve gaz kelebeği tepki veriyor (gecikme < 1 sn).
