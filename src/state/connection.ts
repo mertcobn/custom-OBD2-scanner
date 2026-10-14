@@ -26,6 +26,8 @@ export interface ConnectStep {
 
 interface ConnectionState {
   status: ConnectionStatus;
+  /** The browser's device picker is open: nothing has started yet, so the chooser stays on screen. */
+  picking: boolean;
   demo: boolean;
   transport?: TransportKind;
   adapter?: AdapterInfo;
@@ -34,13 +36,18 @@ interface ConnectionState {
   /** `report`: the connection test report (steps, port, raw adapter traffic) for troubleshooting. */
   error?: { code: ConnectErrorCode; message?: string; report?: string };
   connectedAt?: number;
-  begin: (transport: TransportKind, demo: boolean) => void;
+  /** With `picking`, the previous error stays visible until a device is chosen (no flash of an empty chooser). */
+  begin: (transport: TransportKind, demo: boolean, picking?: boolean) => void;
+  /** A device was chosen in the picker. */
+  picked: () => void;
+  /** The picker was closed without choosing: back to exactly what was shown before. */
+  pickCancelled: () => void;
   step: (id: ConnectStepId, state: StepState, detail?: string) => void;
   connected: (adapter: AdapterInfo, protocol?: string) => void;
   fail: (code: ConnectErrorCode, message?: string, report?: string) => void;
   setStatus: (status: ConnectionStatus) => void;
   setVoltage: (v: number) => void;
-  reset: () => void;
+  reset: (keepError?: boolean) => void;
 }
 
 const initialSteps = (): ConnectStep[] =>
@@ -48,21 +55,44 @@ const initialSteps = (): ConnectStep[] =>
 
 export const useConnection = create<ConnectionState>()((set) => ({
   status: 'idle',
+  picking: false,
   demo: false,
   steps: initialSteps(),
-  begin: (transport, demo) =>
-    set({ status: 'connecting', transport, demo, steps: initialSteps(), error: undefined, adapter: undefined, protocol: undefined }),
+  begin: (transport, demo, picking = false) =>
+    set((s) => ({
+      status: 'connecting',
+      picking,
+      transport,
+      demo,
+      steps: initialSteps(),
+      error: picking ? s.error : undefined,
+      adapter: undefined,
+      protocol: undefined,
+    })),
+  picked: () => set({ picking: false, error: undefined }),
+  pickCancelled: () => set((s) => ({ status: s.error ? 'error' : 'idle', picking: false, steps: initialSteps() })),
   step: (id, state, detail) =>
     set((s) => ({ steps: s.steps.map((st) => (st.id === id ? { ...st, state, detail: detail ?? st.detail } : st)) })),
   connected: (adapter, protocol) => set({ status: 'connected', adapter, protocol, connectedAt: Date.now() }),
   fail: (code, message, report) =>
     set((s) => ({
       status: 'error',
+      picking: false,
       error: { code, message, report },
       steps: s.steps.map((st) => (st.state === 'active' ? { ...st, state: 'failed' } : st)),
     })),
   setStatus: (status) => set({ status }),
   setVoltage: (voltage) => set((s) => (s.adapter ? { adapter: { ...s.adapter, voltage } } : {})),
-  reset: () =>
-    set({ status: 'idle', demo: false, transport: undefined, adapter: undefined, protocol: undefined, steps: initialSteps(), error: undefined, connectedAt: undefined }),
+  reset: (keepError = false) =>
+    set((s) => ({
+      status: keepError && s.error ? 'error' : 'idle',
+      picking: false,
+      demo: false,
+      transport: undefined,
+      adapter: undefined,
+      protocol: undefined,
+      steps: initialSteps(),
+      error: keepError ? s.error : undefined,
+      connectedAt: undefined,
+    })),
 }));

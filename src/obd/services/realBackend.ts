@@ -101,12 +101,16 @@ export class RealBackend implements ObdBackend {
 
   async connect(): Promise<void> {
     const c = useConnection.getState();
-    c.begin(this.transport.kind, this.transport.kind === 'sim');
+    // Targets that open the browser's device picker: the chooser stays on screen until a device is chosen.
+    const picking = this.target === 'ble' || this.target === 'bleAll' || this.target === 'serial';
+    c.begin(this.transport.kind, this.transport.kind === 'sim', picking);
+    if (picking) this.transport.onPicked = () => useConnection.getState().picked();
     trafficLog.length = 0; // the log (and the connection test report) describe this connection only
     try {
       c.step('device', 'active');
       await this.transport.connect();
       if (!this.alive) return;
+      if (useConnection.getState().picking) c.picked();
       c.step('device', 'done', this.transport.deviceName);
       this.transport.onClose((err) => this.onClosed(err));
 
@@ -131,7 +135,7 @@ export class RealBackend implements ObdBackend {
     } catch (e) {
       const failure = this.toFailure(e);
       // Closing the browser's device picker is not an error worth showing.
-      if (failure.code === 'cancelled') useConnection.getState().reset();
+      if (failure.code === 'cancelled') useConnection.getState().pickCancelled();
       else {
         useConnection.getState().fail(failure.code, failure.message === failure.code ? undefined : failure.message, this.connectionReport(failure));
         track('connect_fail', { transport: this.transport.kind, reason: failure.code });

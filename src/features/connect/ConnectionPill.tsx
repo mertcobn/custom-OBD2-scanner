@@ -11,7 +11,7 @@ import { Hanko } from '@/ui/Hanko';
 /** Always-visible connection status. Opens the connection sheet. */
 export function ConnectionPill({ variant }: { variant: 'pill' | 'card' }) {
   const { t } = useTranslation();
-  const status = useConnection((s) => s.status);
+  const status = useConnection((s) => (s.picking ? (s.error ? 'error' : 'idle') : s.status));
   const adapter = useConnection((s) => s.adapter);
   const demo = useConnection((s) => s.demo);
   const lang = useSettings((s) => s.language);

@@ -21,10 +21,12 @@ export function ConnectSheet() {
   const open = useUi((s) => s.connectOpen);
   const close = useUi((s) => s.closeConnect);
   const status = useConnection((s) => s.status);
+  const picking = useConnection((s) => s.picking);
+  const busy = (status === 'connecting' || status === 'reconnecting') && !picking;
 
   return (
     <Sheet open={open} onClose={close} title={t(status === 'connected' ? 'connect.titleConnected' : 'connect.title')} kanji="接続">
-      {status === 'connected' ? <Connected /> : status === 'connecting' || status === 'reconnecting' ? <Progress /> : <Choose />}
+      {status === 'connected' ? <Connected /> : busy ? <Progress /> : <Choose />}
     </Sheet>
   );
 }
@@ -41,6 +43,8 @@ function Choose() {
   const { t } = useTranslation();
   const compat = useMemo(() => detectCompat(), []);
   const error = useConnection((s) => s.error);
+  // While the browser's picker is open, a second click would only be rejected by the browser.
+  const picking = useConnection((s) => s.picking);
   const noBle = !compat.ble;
   const mac = typeof navigator !== 'undefined' && /Macintosh/.test(navigator.userAgent) && !compat.ios;
   // A serial port granted earlier survives reloads: offer it without the picker.
@@ -55,7 +59,7 @@ function Choose() {
   }, [compat.serial]);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5" data-connect-view="choose" aria-busy={picking || undefined}>
       {error && <ErrorBox code={error.code} message={error.message} report={error.report} />}
 
       {compat.ios && !compat.ble && (
@@ -89,21 +93,21 @@ function Choose() {
       </ol>
 
       <div className="flex flex-col gap-2.5">
-        <Button variant="primary" size="lg" block icon={<Bluetooth size={20} />} disabled={noBle} onClick={() => startConnect('ble')}>
+        <Button variant="primary" size="lg" block icon={<Bluetooth size={20} />} disabled={noBle || picking} onClick={() => startConnect('ble')}>
           {t('connect.ble')}
         </Button>
         {!noBle && (
-          <button onClick={() => startConnect('bleAll')} className="mx-auto -mt-1 py-1 text-sm text-ink-muted underline underline-offset-4 hover:text-ink">
+          <button disabled={picking} onClick={() => startConnect('bleAll')} className="mx-auto -mt-1 py-1 text-sm text-ink-muted underline underline-offset-4 hover:text-ink">
             {t('connect.bleAll')}
           </button>
         )}
         {compat.serial && hasKnownPort && (
-          <Button variant="secondary" size="lg" block icon={<History size={20} />} onClick={() => startConnect('serialKnown')}>
+          <Button variant="secondary" size="lg" block icon={<History size={20} />} disabled={picking} onClick={() => startConnect('serialKnown')}>
             {t('connect.serialKnown')}
           </Button>
         )}
         {compat.serial && (
-          <Button variant="secondary" size="lg" block icon={<Usb size={20} />} onClick={() => startConnect('serial')}>
+          <Button variant="secondary" size="lg" block icon={<Usb size={20} />} disabled={picking} onClick={() => startConnect('serial')}>
             {t('connect.serial')}
           </Button>
         )}
@@ -169,7 +173,7 @@ function Progress() {
   const { t } = useTranslation();
   const steps = useConnection((s) => s.steps);
   return (
-    <div className="flex flex-col items-center gap-6 py-2">
+    <div className="flex flex-col items-center gap-6 py-2" data-connect-view="progress">
       <EnsoLoader size={88} />
       <p className="text-center text-sm text-ink-muted">{t('connect.waitHint')}</p>
       <ol className="w-full max-w-sm">
@@ -190,7 +194,7 @@ function Connected() {
   const rate = useLive((s) => s.rate);
   const lang = useSettings((s) => s.language);
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5" data-connect-view="connected">
       <div className="flex items-center gap-4 rounded-2xl bg-surface-2 p-4">
         <EnsoLoader size={56} done />
         <div className="min-w-0">
@@ -221,7 +225,11 @@ function Connected() {
 
 function Notice({ tone, icon, title, children }: { tone: 'kin' | 'beni'; icon: ReactNode; title: string; children: ReactNode }) {
   return (
-    <div className={cx('flex gap-3 rounded-2xl p-4 text-sm leading-relaxed', tone === 'kin' ? 'bg-kin-soft' : 'bg-beni-soft')} role="note">
+    <div
+      className={cx('flex gap-3 rounded-2xl p-4 text-sm leading-relaxed', tone === 'kin' ? 'bg-kin-soft' : 'bg-beni-soft')}
+      role="note"
+      data-error={tone === 'beni' ? '' : undefined}
+    >
       <span className={tone === 'kin' ? 'text-kin' : 'text-beni'}>{icon}</span>
       <div className="min-w-0 text-ink">
         <div className="mb-1 font-medium">{title}</div>

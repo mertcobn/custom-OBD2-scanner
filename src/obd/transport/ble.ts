@@ -54,6 +54,7 @@ export class BleTransport implements Transport {
   private close = new Listeners<[Error | undefined]>();
   private decoder = new TextDecoder();
   private manualClose = false;
+  onPicked?: () => void;
 
   constructor(private readonly opts: { acceptAll?: boolean } = {}) {}
 
@@ -79,6 +80,7 @@ export class BleTransport implements Transport {
       throw new TransportError('unknown', e instanceof Error ? e.message : String(e));
     }
     this.deviceName = this.device.name || this.deviceName;
+    this.onPicked?.();
     this.device.addEventListener('gattserverdisconnected', this.onDisconnected);
     await this.openGatt();
   }

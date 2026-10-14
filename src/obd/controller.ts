@@ -64,7 +64,8 @@ function createBackend(target: ConnectTarget): ObdBackend {
 }
 
 export async function connect(target: ConnectTarget): Promise<void> {
-  await disconnect();
+  // Keep the last error on screen until the new attempt replaces it (no flash of an empty chooser).
+  await disconnect(true);
   const b = createBackend(target);
   backend = b;
   try {
@@ -76,11 +77,11 @@ export async function connect(target: ConnectTarget): Promise<void> {
   }
 }
 
-export async function disconnect(): Promise<void> {
+export async function disconnect(keepError = false): Promise<void> {
   const b = backend;
   backend = undefined;
   if (b) await b.disconnect().catch(() => undefined);
-  useConnection.getState().reset();
+  useConnection.getState().reset(keepError);
   useLive.getState().clear();
   useVehicle.getState().reset();
 }
