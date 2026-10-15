@@ -1,4 +1,4 @@
-import { Elm327Emulator } from '@/obd/sim/elmEmulator';
+import { Elm327Emulator, type EmulatorOptions } from '@/obd/sim/elmEmulator';
 import { DEMO_SCENARIO, type SimScenario } from '@/obd/sim/scenario';
 import { createVehicleModel, type VehicleModel } from '@/obd/sim/vehicleModel';
 import { Listeners, type Transport } from './types';
@@ -10,6 +10,8 @@ export interface SimOptions {
   chunkSize?: number;
   scenario?: SimScenario;
   seed?: number;
+  /** Adapter / car quirks (e.g. a clone whose automatic protocol search fails). */
+  emulator?: EmulatorOptions;
 }
 
 /** A virtual adapter plugged into a virtual car. Behaves like a BLE transport, byte for byte. */
@@ -27,7 +29,7 @@ export class SimTransport implements Transport {
 
   constructor(private readonly opts: SimOptions = {}) {
     this.model = createVehicleModel(opts.seed ?? 7);
-    this.emulator = new Elm327Emulator(this.model, opts.scenario ?? DEMO_SCENARIO);
+    this.emulator = new Elm327Emulator(this.model, opts.scenario ?? DEMO_SCENARIO, opts.emulator);
   }
 
   async connect(): Promise<void> {

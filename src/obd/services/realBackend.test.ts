@@ -152,4 +152,36 @@ describe('RealBackend over the simulated adapter', () => {
     expect(useConnection.getState().status).toBe('error');
     expect(useConnection.getState().error?.code).toBe('lost');
   });
+
+  it('finds the protocol explicitly when the adapter\'s automatic search gives up (field report: OBDBLE clone)', async () => {
+    const t = new SimTransport({ latencyMs: 1, emulator: { secondEcu: true, autoSearchFails: true } });
+    backend = new RealBackend('sim', t);
+    await backend.connect();
+    const c = useConnection.getState();
+    expect(c.status).toBe('connected');
+    expect(c.protocol).toBe('ISO 15765-4 CAN (11 bit, 500 kbaud)');
+    expect(c.steps.find((s) => s.id === 'vehicle')?.detail).toBe('7E8, 7E9');
+  }, 20_000);
+
+  it('finds a 250 kbaud CAN car by trying the protocols one by one', async () => {
+    const { DEMO_SCENARIO } = await import('@/obd/sim/scenario');
+    const t = new SimTransport({ latencyMs: 1, scenario: { ...DEMO_SCENARIO, protocol: '8' }, emulator: { autoSearchFails: true } });
+    backend = new RealBackend('sim', t);
+    await backend.connect();
+    expect(useConnection.getState().protocol).toBe('ISO 15765-4 CAN (11 bit, 250 kbaud)');
+  }, 20_000);
+
+  it('no car on the bus: "noVehicle" after every protocol was tried, adapter back on automatic', async () => {
+    const t = new SimTransport({ latencyMs: 1, emulator: { noCar: true } });
+    const sent: string[] = [];
+    const write = t.write.bind(t);
+    t.write = (text: string) => (sent.push(text.trim()), write(text));
+    backend = new RealBackend('sim', t);
+    await expect(backend.connect()).rejects.toBeTruthy();
+    const e = useConnection.getState().error!;
+    expect(e.code).toBe('noVehicle');
+    expect(e.report).toContain('then protocols 6, 8, 7, 9, 3, 4, 5, 1, 2');
+    expect(sent.filter((s) => s === '0100')).toHaveLength(11);
+    expect(sent.at(-1)).toBe('ATSP0');
+  }, 60_000);
 });

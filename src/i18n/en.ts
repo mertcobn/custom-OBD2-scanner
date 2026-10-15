@@ -64,7 +64,7 @@ export const en = {
       },
       portBusy: { title: "Couldn't open the port", body: 'The Bluetooth serial link is busy or still closing. Wait 10 seconds and try again. If it persists: close other tabs of this site and other OBD apps, unplug and replug the adapter, and if needed turn Bluetooth off and on on the Mac.' },
       adapterSilent: { title: 'Adapter is not answering', body: 'Unplug the adapter for 5 seconds, plug it back in and try again. Close other OBD apps that might be connected.' },
-      noVehicle: { title: 'Car is not answering', body: 'The adapter works but the car did not respond. Turn the ignition on (position II) and try again.' },
+      noVehicle: { title: 'Car is not answering', body: 'The adapter works but the car did not answer on any protocol. Turn the ignition on (position II) or start the engine and try again.' },
       lost: { title: 'Connection lost', body: 'The adapter went out of range or lost power.' },
       unknown: { title: 'Something went wrong', body: 'Please try again. If it keeps happening, reconnect the adapter.' },
     },

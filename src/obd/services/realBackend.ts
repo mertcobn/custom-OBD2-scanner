@@ -58,6 +58,11 @@ class ConnectFailure extends Error {
 export const trafficLog: ElmLogEntry[] = [];
 const TRAFFIC_MAX = 400;
 
+/** Answers meaning "nobody replied on this protocol" (as opposed to a broken adapter). */
+const NO_ANSWER = new Set(['noData', 'unableToConnect', 'busError', 'canError', 'stopped']);
+/** Tried one by one when the automatic search fails: CAN first (every car since 2008), then the older buses. */
+const EXPLICIT_PROTOCOLS = ['6', '8', '7', '9', '3', '4', '5', '1', '2'];
+
 /** "HH:MM:SS.mmm  > 010C  < 7E8 04 41 0C 1A F8  (52 ms)" — one line per command. */
 export function formatTrafficLog(entries: ElmLogEntry[]): string {
   return entries
@@ -255,9 +260,34 @@ export class RealBackend implements ObdBackend {
     return version;
   }
 
+  /**
+   * Find the car's protocol. The automatic search is tried twice (the first request can wake the bus);
+   * then every protocol explicitly — many ELM327 clones give up on the automatic search after a few
+   * hundred ms ("SEARCHING... NO DATA") although the car answers fine on its own protocol.
+   */
   private async detectProtocol(): Promise<string> {
-    // The first request triggers the protocol search, which can take several seconds.
-    await this.elm.send('0100', { timeoutMs: 12000 });
+    const c = useConnection.getState();
+    const probe = async (timeoutMs: number, explicit = false) => {
+      try {
+        await this.elm.send('0100', { timeoutMs });
+        return true;
+      } catch (e) {
+        // A slow (KWP) bus init on the wrong protocol may simply run out of time: try the next one.
+        if (e instanceof ElmError && (NO_ANSWER.has(e.code) || (explicit && e.code === 'timeout'))) return false;
+        throw e;
+      }
+    };
+    let found = (await probe(12000)) || (await sleep(1000), await probe(12000));
+    for (const p of EXPLICIT_PROTOCOLS) {
+      if (found || !this.alive) break;
+      c.step('protocol', 'active', protocolName(p));
+      if (!(await this.elm.at(`ATSP${p}`))) continue;
+      found = await probe(p <= '5' ? 9000 : 4000, true);
+    }
+    if (!found) {
+      await this.elm.at('ATSP0');
+      throw new ConnectFailure('noVehicle', `0100: no answer (automatic search ×2, then protocols ${EXPLICIT_PROTOCOLS.join(', ')})`);
+    }
     const dpn = (await this.elm.at('ATDPN'))?.[0] ?? '6';
     this.dpn = dpn.replace(/^A/i, '');
     this.format = frameFormatFor(dpn);

@@ -66,7 +66,7 @@ export const tr: Messages = {
       },
       portBusy: { title: 'Port açılamadı', body: "Bluetooth seri bağlantısı meşgul ya da henüz kapanmamış. 10 saniye bekleyip tekrar dene. Olmazsa: aynı sitenin açık başka sekmesini ve diğer OBD uygulamalarını kapat, adaptörü çıkarıp tak, gerekirse Mac'te Bluetooth'u kapatıp aç." },
       adapterSilent: { title: 'Adaptör yanıt vermiyor', body: 'Adaptörü 5 saniye çıkarıp tekrar tak ve yeniden dene. Bağlı olabilecek diğer OBD uygulamalarını kapat.' },
-      noVehicle: { title: 'Araç yanıt vermiyor', body: 'Adaptör çalışıyor ama araç cevap vermedi. Kontağı aç (II konumu) ve tekrar dene.' },
+      noVehicle: { title: 'Araç yanıt vermiyor', body: 'Adaptör çalışıyor ama araç hiçbir protokolde cevap vermedi. Kontağı aç (II konumu) ya da motoru çalıştır ve tekrar dene.' },
       lost: { title: 'Bağlantı koptu', body: 'Adaptör kapsama alanından çıktı ya da gücü kesildi.' },
       unknown: { title: 'Bir şeyler ters gitti', body: 'Lütfen tekrar dene. Devam ederse adaptörü çıkarıp tak.' },
     },

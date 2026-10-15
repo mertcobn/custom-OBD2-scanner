@@ -81,6 +81,10 @@ export function encodeDtc(code: string): [number, number] {
 export interface EmulatorOptions {
   /** Answer from a second ECU (transmission, 7E9) to PID 00 — exercises multi-ECU parsing. */
   secondEcu?: boolean;
+  /** Like some clones: the automatic search (ATSP0) gives up with "NO DATA"; only an explicit ATSPn works. */
+  autoSearchFails?: boolean;
+  /** No car on the bus (ignition off): every OBD request fails. */
+  noCar?: boolean;
 }
 
 /**
@@ -92,6 +96,8 @@ export class Elm327Emulator {
   headers = false;
   spaces = true;
   private connected = false;
+  /** Protocol set with ATSP/ATTP ('0' = automatic). */
+  private sp = '0';
   private dtcs: Dtc[];
   private cleared = false;
 
@@ -116,7 +122,10 @@ export class Elm327Emulator {
     if (cmd === '') return ['?'];
     if (cmd.startsWith('AT')) return this.at(cmd.slice(2));
     if (!/^[0-9A-F]+$/.test(cmd) || cmd.length < 2) return ['?'];
-    const searching = !this.connected ? ['SEARCHING...'] : [];
+    const auto = this.sp === '0';
+    if (this.opts.noCar || (auto && this.opts.autoSearchFails)) return auto ? ['SEARCHING...', 'NO DATA'] : ['NO DATA'];
+    if (!auto && this.sp !== this.scenario.protocol) return [Number.parseInt(this.sp, 16) <= 5 ? 'BUS INIT: ...ERROR' : 'NO DATA'];
+    const searching = !this.connected && auto ? ['SEARCHING...'] : [];
     this.connected = true;
     const out = this.obd(cmd);
     return [...searching, ...(out.length ? out : ['NO DATA'])];
@@ -136,7 +145,13 @@ export class Elm327Emulator {
     if (c === 'E0' || c === 'E1') return (this.echo = c === 'E1'), ['OK'];
     if (c === 'H0' || c === 'H1') return (this.headers = c === 'H1'), ['OK'];
     if (c === 'S0' || c === 'S1') return (this.spaces = c === 'S1'), ['OK'];
-    if (c === 'DPN') return [this.connected ? `A${this.scenario.protocol}` : 'A0'];
+    const sp = /^(?:SP|TP)A?([0-9A-C])$/.exec(c);
+    if (sp) {
+      this.sp = sp[1]!;
+      this.connected = false;
+      return ['OK'];
+    }
+    if (c === 'DPN') return this.sp !== '0' ? [this.sp] : [this.connected ? `A${this.scenario.protocol}` : 'A0'];
     if (c === 'DP') return [this.connected ? `AUTO, ${this.scenario.protocol}` : 'AUTO'];
     if (/^(L[01]|M[01]|AT[012]|ST[0-9A-F]{2}|SP[0-9A-C]|TP[0-9A-C]|CAF[01]|D|PC|AL|NL|CFC[01]|AR)$/.test(c)) return ['OK'];
     return ['?'];
