@@ -89,4 +89,33 @@ describe('Elm327 driver', () => {
     expect(parseVoltage(['12.6V'])).toBe(12.6);
     expect(parseVoltage(['?'])).toBeUndefined();
   });
+
+  it('a lost command (no answer at all) does not swallow the next answer', async () => {
+    let first = true;
+    const t = new FakeTransport((cmd) => {
+      if (cmd === 'ATZ' && first) {
+        first = false;
+        return undefined; // swallowed
+      }
+      return cmd === 'ATZ' ? ['\r\rELM327 v1.5\r\r>'] : ['OK\r\r>'];
+    });
+    const elm = new Elm327(t);
+    expect(await elm.at('ATZ', 100)).toBeUndefined();
+    expect(await elm.at('ATZ', 1000)).toEqual(['ELM327 v1.5']);
+    expect(await elm.at('ATE0', 1000)).toEqual(['OK']);
+  });
+
+  it('a late answer to a timed-out command is thrown away, not taken as the next answer', async () => {
+    const t = new FakeTransport(() => undefined);
+    const elm = new Elm327(t);
+    t.write = async (text: string) => {
+      const cmd = text.replace(/\r$/, '');
+      t.written.push(cmd);
+      // 0100 answers after 150 ms (after its 50 ms timeout); 010C answers at once.
+      if (cmd === '0100') setTimeout(() => t.data.emit('7E8 06 41 00 BE 3F A8 13\r\r>'), 150);
+      if (cmd === '010C') setTimeout(() => t.data.emit('7E8 04 41 0C 1A F8\r\r>'), 1);
+    };
+    await expect(elm.send('0100', { timeoutMs: 50 })).rejects.toMatchObject({ code: 'timeout' });
+    expect(await elm.send('010C', { timeoutMs: 1000 })).toEqual(['7E8 04 41 0C 1A F8']);
+  });
 });
