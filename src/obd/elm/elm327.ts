@@ -33,6 +33,9 @@ const STATUS: [RegExp, ElmErrorCode][] = [
   [/^STOPPED$/, 'stopped'],
 ];
 
+/** How long to wait for a timed-out command's late prompt before assuming the command was lost. */
+const LATE_PROMPT_MS = 500;
+
 /** Lines that are informational and never part of the answer. */
 const NOISE = /^(SEARCHING\.*|BUS INIT:?\s*\.*\s*(OK)?|OK)$/;
 
@@ -59,6 +62,8 @@ export class Elm327 {
   private chain: Promise<unknown> = Promise.resolve();
   /** After a timeout, everything up to the next prompt belongs to the abandoned command. */
   private discardUntilPrompt = false;
+  /** Resolves when the abandoned command's late prompt has been discarded. */
+  private onDiscarded?: () => void;
   private closed = false;
   private readonly offData: () => void;
   private readonly offClose: () => void;
@@ -94,6 +99,7 @@ export class Elm327 {
       this.buffer = this.buffer.slice(idx + 1);
       if (this.discardUntilPrompt) {
         this.discardUntilPrompt = false;
+        this.onDiscarded?.();
         continue;
       }
       const w = this.waiter;
@@ -110,7 +116,30 @@ export class Elm327 {
     return p;
   }
 
-  private exec(cmd: string, { timeoutMs = 2500, raw = false }: SendOptions): Promise<string[]> {
+  /**
+   * After a timeout the adapter either answers late (that prompt must be thrown away) or never
+   * answers at all (a lost command). Wait briefly for a late prompt; if none comes, the command was
+   * lost and the next answer is ours — discarding it would shift every later response by one.
+   */
+  private async settle(): Promise<void> {
+    if (!this.discardUntilPrompt) return;
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, LATE_PROMPT_MS);
+      this.onDiscarded = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+    this.onDiscarded = undefined;
+    this.discardUntilPrompt = false;
+  }
+
+  private async exec(cmd: string, opts: SendOptions): Promise<string[]> {
+    await this.settle();
+    return this.execNow(cmd, opts);
+  }
+
+  private execNow(cmd: string, { timeoutMs = 2500, raw = false }: SendOptions): Promise<string[]> {
     if (this.closed) return Promise.reject(new ElmError('closed', cmd));
     const started = performance.now();
     return new Promise<string[]>((resolve, reject) => {

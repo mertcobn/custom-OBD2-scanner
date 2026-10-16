@@ -6,7 +6,7 @@ export interface SimScenario {
   calibrationIds: string[];
   ecuName: string;
   /** ELM protocol number the car speaks. */
-  protocol: '6' | '7' | '8' | '3';
+  protocol: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
   dtcs: Dtc[];
   monitor: MonitorStatus;
   freezeFrame: { dtc: string; values: Record<number, number[]> };

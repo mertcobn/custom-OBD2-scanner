@@ -60,6 +60,8 @@ const TRAFFIC_MAX = 400;
 
 /** Answers meaning "nobody replied on this protocol" (as opposed to a broken adapter). */
 const NO_ANSWER = new Set(['noData', 'unableToConnect', 'busError', 'canError', 'stopped']);
+/** Errors worth one more try: the bus was momentarily busy or the answer got garbled. */
+const TRANSIENT = new Set(['busError', 'canError', 'stopped', 'bufferFull', 'timeout']);
 /** Tried one by one when the automatic search fails: CAN first (every car since 2008), then the older buses. */
 const EXPLICIT_PROTOCOLS = ['6', '8', '7', '9', '3', '4', '5', '1', '2'];
 
@@ -86,6 +88,8 @@ export class RealBackend implements ObdBackend {
   private alive = true;
   private polling = false;
   private paused = 0;
+  /** One-off reads running in the background (interleaved with polling instead of pausing it). */
+  private background = 0;
   private responses: number[] = [];
   private consecutiveFailures = 0;
   private dpn = '0';
@@ -173,18 +177,31 @@ export class RealBackend implements ObdBackend {
 
   /** Vehicle identity, readiness and fault codes — read once right after connecting. */
   private async afterConnect(): Promise<void> {
-    await this.readVehicleInfo().catch(() => undefined);
-    await this.readMonitor().catch(() => undefined);
-    await this.readDtcs().catch(() => undefined);
+    // In the background: interleaved with live polling, so the gauges fill at once even on a slow adapter.
+    this.background++;
+    try {
+      await this.readVehicleInfo().catch(() => undefined);
+      await this.readMonitor().catch(() => undefined);
+      await this.readDtcs().catch(() => undefined);
+    } finally {
+      this.background--;
+    }
   }
 
-  /** Request that tolerates "NO DATA" / unsupported answers. */
+  /**
+   * Request that tolerates "NO DATA" / unsupported answers. A transient bus error (busy bus, CAN error,
+   * interrupted, timed out) is retried once.
+   */
   private async tryRequest(cmd: string, timeoutMs = 3000): Promise<EcuMessage[]> {
-    try {
-      return await this.exclusive(() => this.request(cmd, timeoutMs));
-    } catch (e) {
-      if (e instanceof ElmError && e.code !== 'closed') return [];
-      throw e;
+    const run = () => (this.background ? this.request(cmd, timeoutMs) : this.exclusive(() => this.request(cmd, timeoutMs)));
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await run();
+      } catch (e) {
+        if (!(e instanceof ElmError) || e.code === 'closed') throw e;
+        if (attempt === 0 && TRANSIENT.has(e.code)) continue;
+        return [];
+      }
     }
   }
 

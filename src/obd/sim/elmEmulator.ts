@@ -1,4 +1,5 @@
 import { SIGNALS } from '@/obd/signals';
+import { frameFormatFor } from '@/obd/protocol/frames';
 import { encodeSupportedMask } from '@/obd/protocol/supported';
 import type { Dtc, MonitorId } from '@/obd/types';
 import type { SimScenario } from './scenario';
@@ -125,7 +126,9 @@ export class Elm327Emulator {
     const auto = this.sp === '0';
     if (this.opts.noCar || (auto && this.opts.autoSearchFails)) return auto ? ['SEARCHING...', 'NO DATA'] : ['NO DATA'];
     if (!auto && this.sp !== this.scenario.protocol) return [Number.parseInt(this.sp, 16) <= 5 ? 'BUS INIT: ...ERROR' : 'NO DATA'];
-    const searching = !this.connected && auto ? ['SEARCHING...'] : [];
+    // First request on a slow-init bus (ISO 9141 / KWP 5 baud) prints the init result, like a real ELM.
+    const init = !this.connected && ['3', '4'].includes(this.protocol) ? ['BUS INIT: ...OK'] : [];
+    const searching = [...(!this.connected && auto ? ['SEARCHING...'] : []), ...init];
     this.connected = true;
     const out = this.obd(cmd);
     return [...searching, ...(out.length ? out : ['NO DATA'])];
@@ -163,7 +166,9 @@ export class Elm327Emulator {
     switch (mode) {
       case 0x01: {
         // Optional trailing response-count digit ("010C1") — ignore.
-        const pids = cmd.length % 2 === 1 ? args.slice(0, -1) : args;
+        const all = cmd.length % 2 === 1 ? args.slice(0, -1) : args;
+        // Pre-CAN ECUs answer one PID per request.
+        const pids = this.format === 'legacy' ? all.slice(0, 1) : all;
         const payload: number[] = [0x41];
         for (const pid of pids.slice(0, 6)) {
           const data = this.mode01(pid);
@@ -266,8 +271,56 @@ export class Elm327Emulator {
     return [];
   }
 
-  /** Format a payload as CAN 11-bit frames the way the ELM prints them. */
+  /** The protocol in use: the one forced with ATSP, else the car's own. */
+  private get protocol(): string {
+    return this.sp !== '0' ? this.sp : this.scenario.protocol;
+  }
+
+  private get format() {
+    return frameFormatFor(this.protocol);
+  }
+
+  /** Format a payload the way the ELM prints it for the protocol in use (`ecu` is the CAN 11-bit id). */
   private frame(ecu: string, payload: number[]): string[] {
+    if (this.format === 'legacy') return this.legacyFrames(ecu, payload);
+    if (this.format === 'can29') return this.canFrames(['18', 'DA', 'F1', ecu === '7E8' ? '10' : '18'], payload);
+    return this.canFrames([ecu], payload);
+  }
+
+  /**
+   * J1850 / ISO 9141 / KWP: one message per line, at most 7 data bytes, header + checksum.
+   * Long answers are split the legacy way: Mode 09 with a sequence byte, DTCs three per line.
+   */
+  private legacyFrames(ecu: string, payload: number[]): string[] {
+    const src = ecu === '7E8' ? 0x10 : 0x18;
+    const p = this.protocol;
+    const line = (data: number[]) => {
+      const head = p === '1' ? [0x41, 0x6b, src] : p === '4' || p === '5' ? [0x80 | data.length, 0xf1, src] : [0x48, 0x6b, src];
+      const all = [...head, ...data];
+      const sum = all.reduce((a, b) => a + b, 0) & 0xff;
+      const sep = this.spaces ? ' ' : '';
+      return this.headers ? [...all, sum].map(hex).join(sep) : data.map(hex).join(sep);
+    };
+    const [svc = 0, pid = 0] = payload;
+    if (svc === 0x49 && (pid === 0x02 || pid === 0x04 || pid === 0x0a)) {
+      const body = payload.slice(3);
+      const padded = [...new Array<number>((4 - (body.length % 4)) % 4).fill(0), ...body];
+      const out: string[] = [];
+      for (let i = 0, seq = 1; i < padded.length; i += 4, seq++) out.push(line([0x49, pid, seq, ...padded.slice(i, i + 4)]));
+      return out;
+    }
+    if (svc === 0x43 || svc === 0x47 || svc === 0x4a) {
+      const codes = payload.slice(2);
+      const padded = [...codes, ...new Array<number>((6 - (codes.length % 6)) % 6 || (codes.length ? 0 : 6)).fill(0)];
+      const out: string[] = [];
+      for (let i = 0; i < padded.length; i += 6) out.push(line([svc, ...padded.slice(i, i + 6)]));
+      return out;
+    }
+    return [line(payload.slice(0, 7))];
+  }
+
+  private canFrames(header: string[], payload: number[]): string[] {
+    const ecu = header.join(this.spaces ? ' ' : '');
     const sep = this.spaces ? ' ' : '';
     const bytes = (b: number[]) => b.map(hex).join(sep);
     const head = (b: number[]) => (this.headers ? `${ecu}${sep}${bytes(b)}` : bytes(b));
