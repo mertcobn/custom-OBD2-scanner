@@ -41,4 +41,18 @@ describe('PollScheduler', () => {
     const r = PollScheduler.estimateRate(['rpm', 'speed'], 10);
     expect(r.fast).toBeCloseTo(5);
   });
+
+  it('per-signal tier overrides (a catalyst test polls the O2 sensors fast, the context slowly)', () => {
+    const s = new PollScheduler();
+    s.setWatched(['o2VB1S1', 'o2VB1S2', 'rpm'], { o2VB1S1: 'fast', o2VB1S2: 'fast', rpm: 'slow' });
+    const out = take(s, 210);
+    const o2 = out.filter((x) => x === 'o2VB1S2').length;
+    const rpm = out.filter((x) => x === 'rpm').length;
+    expect(o2).toBeGreaterThan(rpm * 8);
+    expect(rpm).toBeGreaterThan(0);
+    // Changing only the overrides takes effect
+    s.setWatched(['o2VB1S1', 'o2VB1S2', 'rpm']);
+    const after = take(s, 210);
+    expect(after.filter((x) => x === 'rpm').length).toBeGreaterThan(after.filter((x) => x === 'o2VB1S2').length);
+  });
 });

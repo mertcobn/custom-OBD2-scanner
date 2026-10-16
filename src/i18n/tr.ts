@@ -129,6 +129,7 @@ export const tr: Messages = {
   },
   stats: { min: 'En düşük', max: 'En yüksek', mean: 'Ortalama', count: 'Örnek' },
   dtc: {
+    catalystTest: 'Katalizör testi kaydet',
     reread: 'Tekrar oku',
     reading: 'Arıza kodları okunuyor…',
     milOn: 'Motor arıza lambası yanıyor',
@@ -269,8 +270,10 @@ export const tr: Messages = {
       performance: { title: 'Performans', body: 'Hızlanma denemeleri: gaz, basınç, avans.' },
       fuel: { title: 'Yakıt tüketimi', body: 'Tüketim, hava akışı ve yakıt düzeltmeleri.' },
       health: { title: 'Motor sağlığı', body: 'Yakıt düzeltmeleri, O2 sensörleri, sıcaklıklar — teşhis için.' },
+      catalyst: { title: 'Katalizör testi', body: 'Ön ve arka O2, hızlı örnekleme. Isınmış motor, sabit hız.' },
       custom: { title: 'Özel', body: 'İstediğin sinyalleri tek tek seç.' },
     },
+    catalystSuggested: '{{code}} bulundu: Katalizör testi seçildi.',
     pickTitle: 'Sinyalleri seç',
     pickHint: 'Daha az sinyal, her biri için saniyede daha fazla örnek demek.',
     selectAll: 'Tümünü seç ({{count}})',

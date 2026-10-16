@@ -24,7 +24,7 @@ import { TransportError, type Transport } from '@/obd/transport/types';
 import type { Dtc, DtcKind, FreezeFrame, Sample } from '@/obd/types';
 import { track } from '@/lib/telemetry';
 import { sampleBus } from './bus';
-import { PollScheduler } from './scheduler';
+import { PollScheduler, type TierOverrides } from './scheduler';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -343,12 +343,15 @@ export class RealBackend implements ObdBackend {
     return sortEcus([...ecus]);
   }
 
-  setWatched(ids: string[]): void {
+  setWatched(ids: string[], tiers?: TierOverrides): void {
     this.watched = ids;
-    this.scheduler.setWatched(ids.filter((id) => {
-      const s = SIGNAL_BY_ID[id];
-      return !!s && (s.source === 'elm' || this.supportedPids.has(s.pid));
-    }));
+    this.scheduler.setWatched(
+      ids.filter((id) => {
+        const s = SIGNAL_BY_ID[id];
+        return !!s && (s.source === 'elm' || this.supportedPids.has(s.pid));
+      }),
+      tiers,
+    );
   }
 
   /** Run a one-off command between poll requests (e.g. DTC read). */

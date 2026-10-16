@@ -127,6 +127,7 @@ export const en = {
   },
   stats: { min: 'Min', max: 'Max', mean: 'Average', count: 'Samples' },
   dtc: {
+    catalystTest: 'Record a catalyst test',
     reread: 'Read again',
     reading: 'Reading fault codes…',
     milOn: 'Check engine light is on',
@@ -267,8 +268,10 @@ export const en = {
       performance: { title: 'Performance', body: 'Acceleration runs: throttle, boost, timing.' },
       fuel: { title: 'Fuel economy', body: 'Consumption, air flow and fuel trims.' },
       health: { title: 'Engine health', body: 'Fuel trims, O2 sensors, temperatures — for diagnosing.' },
+      catalyst: { title: 'Catalyst test', body: 'Front and rear O2, sampled fast. Warm engine, steady speed.' },
       custom: { title: 'Custom', body: 'Pick exactly the signals you want.' },
     },
+    catalystSuggested: '{{code}} found: Catalyst test selected.',
     pickTitle: 'Choose signals',
     pickHint: 'Fewer signals means more samples per second for each one.',
     selectAll: 'Select all ({{count}})',

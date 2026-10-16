@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bluetooth, Eraser, RefreshCw, TriangleAlert } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Bluetooth, Eraser, RefreshCw, TriangleAlert, Waves } from 'lucide-react';
+import { catalystCode } from '@/features/record/presets';
 import { clearDtcs, readDtcs } from '@/obd/controller';
 import { SIGNAL_BY_ID } from '@/obd/signals';
 import type { Dtc, DtcKind } from '@/obd/types';
@@ -9,6 +11,7 @@ import { cx } from '@/lib/cx';
 import { formatSignal, loc, LOCALE } from '@/lib/format';
 import { useConnection } from '@/state/connection';
 import { useLive } from '@/state/live';
+import { useRecording } from '@/state/recording';
 import { useSettings } from '@/state/settings';
 import { useUi } from '@/state/ui';
 import { useVehicle } from '@/state/vehicle';
@@ -150,9 +153,32 @@ function DtcCard({ dtc }: { dtc: Dtc }) {
             <Badge className="num">ECU {dtc.ecu}</Badge>
           </div>
           {d.subsystem && d.known && <p className="mt-2 text-xs text-ink-faint">{d.subsystem}</p>}
+          {catalystCode([dtc]) && <CatalystTestButton />}
         </div>
       </div>
     </li>
+  );
+}
+
+/** Catalyst-efficiency code → one tap to a recording that can actually show the catalyst at work. */
+function CatalystTestButton() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const recording = useRecording((s) => s.status === 'recording');
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      className="mt-3"
+      icon={<Waves size={15} />}
+      disabled={recording}
+      onClick={() => {
+        useRecording.getState().setConfig({ preset: 'catalyst', chosen: true, durationSec: 300 });
+        void navigate('/record');
+      }}
+    >
+      {t('dtc.catalystTest')}
+    </Button>
   );
 }
 
