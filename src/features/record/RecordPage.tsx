@@ -10,13 +10,14 @@ import { useLive } from '@/state/live';
 import { useRecording, type SessionMeta } from '@/state/recording';
 import { useSettings } from '@/state/settings';
 import { useUi } from '@/state/ui';
+import { useVehicle } from '@/state/vehicle';
 import { formatNumber } from '@/units/units';
 import { Button } from '@/ui/Button';
 import { Badge, Card, SectionTitle, Segmented } from '@/ui/controls';
 import { Hanko } from '@/ui/Hanko';
 import { PageHeader } from '@/ui/layout';
 import { Sheet } from '@/ui/Sheet';
-import { DURATIONS, PRESETS } from './presets';
+import { catalystCode, DURATIONS, PRESETS, presetSignals } from './presets';
 import { SessionSummary } from './SessionSummary';
 
 export function RecordPage() {
@@ -55,17 +56,27 @@ function Wizard() {
   const setConfig = useRecording((s) => s.setConfig);
   const start = useRecording((s) => s.start);
   const openConnect = useUi((s) => s.openConnect);
+  const dtcs = useVehicle((s) => s.dtcs);
+  const catCode = catalystCode(dtcs);
   const [picking, setPicking] = useState(false);
+
+  // A catalyst-efficiency code (P0420…): start from the catalyst test, unless the user already chose a preset.
+  useEffect(() => {
+    if (catCode && !config.chosen && config.preset !== 'catalyst') setConfig({ preset: 'catalyst', durationSec: 300 });
+  }, [catCode, config.chosen, config.preset, setConfig]);
 
   // Apply the preset against what this car actually supports.
   useEffect(() => {
-    if (config.preset === 'custom') return;
+    if (config.preset === 'custom') {
+      if (config.tiers) setConfig({ tiers: undefined });
+      return;
+    }
     const preset = PRESETS.find((p) => p.id === config.preset)!;
-    const signals = supported.length ? preset.signals.filter((id) => supported.includes(id)) : preset.signals;
-    if (signals.join() !== config.signals.join()) setConfig({ signals });
-  }, [config.preset, config.signals, supported, setConfig]);
+    const signals = presetSignals(preset, supported, dtcs);
+    if (signals.join() !== config.signals.join() || preset.tiers !== config.tiers) setConfig({ signals, tiers: preset.tiers });
+  }, [config.preset, config.signals, config.tiers, supported, dtcs, setConfig]);
 
-  const hz = PollScheduler.estimateRate(config.signals, rate || 12);
+  const hz = PollScheduler.estimateRate(config.signals, rate || 12, config.tiers);
 
   return (
     <>
@@ -73,29 +84,35 @@ function Wizard() {
         <SectionTitle>
           <span className="num mr-1 text-sakura-deep">1</span> {t('record.step1')}
         </SectionTitle>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {config.preset === 'catalyst' && catCode && !config.chosen && (
+          <p className="mb-3 text-sm text-ink-muted">{t('record.catalystSuggested', { code: catCode })}</p>
+        )}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {PRESETS.map((p) => {
             const active = config.preset === p.id;
-            const n = p.id === 'custom' ? null : (supported.length ? p.signals.filter((id) => supported.includes(id)) : p.signals).length;
+            const n = p.id === 'custom' ? null : presetSignals(p, supported, dtcs).length;
             return (
               <button
                 key={p.id}
                 onClick={() => {
-                  setConfig({ preset: p.id });
+                  setConfig({ preset: p.id, chosen: true, ...(p.durationSec ? { durationSec: p.durationSec } : {}) });
                   if (p.id === 'custom') setPicking(true);
                 }}
                 aria-pressed={active}
                 className={cx(
                   'card relative flex flex-col items-start gap-2 p-4 text-left transition-all',
-                  // Odd one out on the 2-column phone grid: span the full row instead of leaving a hole.
-                  p.id === 'custom' && 'col-span-2 sm:col-span-1',
                   active ? 'border-ink ring-1 ring-ink' : 'hover:border-ink-faint',
                 )}
               >
                 <p.icon size={22} className={active ? 'text-sakura-deep' : 'text-ink-muted'} />
                 <span className="font-medium">{t(`record.presets.${p.id}.title`)}</span>
                 <span className="text-xs leading-snug text-ink-muted">{t(`record.presets.${p.id}.body`)}</span>
-                {n !== null && <span className="num mt-auto text-xs text-ink-faint">{t('record.signalCount', { count: n })}</span>}
+                {n !== null && (
+                  <span className="mt-auto flex flex-wrap items-center gap-1.5">
+                    <span className="num text-xs text-ink-faint">{t('record.signalCount', { count: n })}</span>
+                    {p.id === 'catalyst' && catCode && <Badge tone="beni" className="num">{catCode}</Badge>}
+                  </span>
+                )}
                 {active && <Check size={16} className="absolute top-3 right-3 text-sakura-deep" />}
               </button>
             );
@@ -158,13 +175,13 @@ function SignalPicker({ open, onClose }: { open: boolean; onClose: () => void })
 
   const toggle = (id: string) => {
     const signals = config.signals.includes(id) ? config.signals.filter((x) => x !== id) : [...config.signals, id];
-    setConfig({ preset: 'custom', signals });
+    setConfig({ preset: 'custom', chosen: true, signals });
   };
   /** Select or clear a group of signals at once (keeps the catalogue order). */
   const setMany = (ids: string[], on: boolean) => {
     const next = new Set(config.signals);
     ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
-    setConfig({ preset: 'custom', signals: pool.filter((id) => next.has(id)) });
+    setConfig({ preset: 'custom', chosen: true, signals: pool.filter((id) => next.has(id)) });
   };
   const allSelected = pool.length > 0 && pool.every((id) => config.signals.includes(id));
 

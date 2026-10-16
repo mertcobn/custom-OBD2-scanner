@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AdapterInfo, Dtc, FreezeFrame, MonitorStatus, Sample, VehicleInfo } from '@/obd/types';
 import type { OnboardTest } from '@/obd/protocol/mode06';
+import type { PollTier } from '@/obd/signals';
 import { sampleBus } from '@/obd/services/bus';
 import { acquireWakeLock, releaseWakeLock } from '@/lib/wakeLock';
 import * as store from '@/storage/db';
@@ -8,13 +9,17 @@ import { useConnection } from './connection';
 import { useLive } from './live';
 import { useVehicle } from './vehicle';
 
-export type PresetId = 'drive' | 'performance' | 'fuel' | 'health' | 'custom';
+export type PresetId = 'drive' | 'performance' | 'fuel' | 'health' | 'catalyst' | 'custom';
 
 export interface RecordingConfig {
   preset: PresetId;
   signals: string[];
   /** Auto-stop after this many seconds; null = until the user stops. */
   durationSec: number | null;
+  /** Poll-rate overrides from the preset (e.g. O2 sensors fast in a catalyst test). */
+  tiers?: Partial<Record<string, PollTier>>;
+  /** The user picked the preset themselves (an automatic suggestion must not override it). */
+  chosen?: boolean;
 }
 
 export interface Marker {

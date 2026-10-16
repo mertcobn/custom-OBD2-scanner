@@ -202,3 +202,21 @@ test('custom recording: select all / per category', async ({ page }) => {
   await sheet.getByRole('button', { name: /^Tümünü seç/ }).click();
   await page.screenshot({ path: `test-results/screens/${test.info().project.name}-16-picker.png` });
 });
+
+test('catalyst test preset: front + rear O2 polled fast', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Demoyu dene' }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0, { timeout: 10000 });
+  await page.getByRole('link', { name: 'Kayıt' }).first().click();
+  await page.getByRole('button', { name: /Katalizör testi/ }).click();
+  await expect(page.getByRole('button', { name: /Katalizör testi/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('radio', { name: '5 dk', exact: true })).toBeChecked();
+  for (const s of ['O2 B1S1', 'O2 B1S2']) await expect(page.getByText(s, { exact: true }).first()).toBeVisible();
+  await page.screenshot({ path: `test-results/screens/${test.info().project.name}-17-catalyst.png`, fullPage: true });
+  await page.getByRole('button', { name: 'Kaydı başlat' }).click();
+  await page.waitForTimeout(3000);
+  await page.getByRole('button', { name: 'Durdur' }).click();
+  await expect(page.getByText('Kayıt tamamlandı')).toBeVisible();
+  await expect(page.getByText('Katalizör testi').first()).toBeVisible();
+});
+

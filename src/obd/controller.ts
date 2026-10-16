@@ -4,6 +4,7 @@ import { useLive } from '@/state/live';
 import { useRecording } from '@/state/recording';
 import { useVehicle } from '@/state/vehicle';
 import { sampleBus } from './services/bus';
+import type { TierOverrides } from './services/scheduler';
 // Imported eagerly: the browser device picker must open within the click's user-activation window.
 import { RealBackend, type RealTarget } from './services/realBackend';
 
@@ -14,7 +15,7 @@ import { RealBackend, type RealTarget } from './services/realBackend';
 export interface ObdBackend {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
-  setWatched(ids: string[]): void;
+  setWatched(ids: string[], tiers?: TierOverrides): void;
   readDtcs(): Promise<void>;
   clearDtcs(): Promise<void>;
   readTests(): Promise<void>;
@@ -35,7 +36,9 @@ function watchedUnion(): string[] {
 }
 
 function pushWatched() {
-  backend?.setWatched(watchedUnion());
+  // A recording may ask for some signals to be polled faster (e.g. the O2 sensors in a catalyst test).
+  const rec = useRecording.getState();
+  backend?.setWatched(watchedUnion(), rec.status === 'recording' ? rec.config.tiers : undefined);
 }
 
 /** Register interest in signals; returns an unregister function. */
